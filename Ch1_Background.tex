@@ -1,0 +1,535 @@
+\chapter{INTRODUCTION}
+\label{chap:intro}
+
+% By labeling the chapter, I can refer to it later using the
+% label. (\ref{chap:intro}, \pageref{chap:intro}) Latex will take care
+% of the numbering.
+
+Nuclear physics is the study of the structure and properties of atomic nuclei, 
+which make up most of the known matter in the universe.
+The goal of nuclear theory is to make predictions about the interactions
+of nuclei with external fields, in order to answer questions 
+about experimental outcomes and thereby related deeper and ongoing questions in physics
+about the fundamental symmetries of nature.
+
+Some of the more important and open questions in physics, such as those related to 
+the matter-antimatter symmetry violation, the source and origin of dark matter 
+in the universe, and neutrinoless double beta decay, all rely on accurate and 
+detailed quantum models of nuclei. 
+Investigations 
+into neutrinoless double beta decay call for transition matrix elements from 
+$^{76}$Ge and $^{76}$Se\cite{Faessler,Brown2}. 
+Some searches for dark matter involve collisions
+with heavy nuclei such as $^{131}$Xe, and require detailed nuclear structure calculations\cite{Bednyakov}.
+Finally, the origin of the matter-antimatter symmetry 
+violation may be due to CP-violation\cite{Sakhorav}, and one approach to investigating the 
+source of CP-violation is through the permanent electric dipole moments of certain
+nuclei such as $^{199}$Hg\cite{Willmann}. 
+
+In order to understand observations obtained 
+from experiments, or to make predictions about future experiments, we need to be 
+able to compute the matrix elements of operators with accurate nuclear 
+wavefunctions computed from detailed Hamiltonians.
+I will be addressing the task of computing accurate wavefunctions from existing
+Hamiltonians, by solving the quantum N-body problem as a matrix
+eigenvalue problem. Because the complexity of many body problems scales exponentially
+with the number of particles, the dimension of these matrices can very large. This is
+especially true for medium and heavy nuclei. As a particular
+example, calculations of the parity violating nuclear ``anapole moment'' for nuclei such as $^{133}$Cs and 
+$^{205}$Tl rely on accurate ground state wavefunctions, and one- and two-body 
+density matrix elements\cite{Haxton89,Haxton02}. $^{133}$Cs in the configuration interaction shell model,
+a kind of matrix eigenvalue problem, has a basis dimension 
+of over one-hundred million and requires nearly $800$ GB of memory to store
+just the non-zero matrix elements of the Hamiltonian. Given the enormity of 
+such problems and finite computer memory, it becomes of interest 
+to find ways to reduce the size of such matrices. In principle, this can be done by truncating
+the basis and computing only the matrix elements whose basis elements are most important.
+In this thesis I will present in considerable detail evidence that this is a plausible
+strategy in a specific framework for our choice of basis. Furthermore, I will present evidence that 
+this should work \textit{better} for the kinds of cases we will face for medium
+and heavy nuclei, that is, with unequal numbers of protons and neutrons.
+
+The framework that we will work in is a proton-neutron coupling scheme, the details of 
+which will be discussed in Chapter 5. The evidence will be the \textit{entropy of entanglement}
+between protons and neutrons in atomic nuclei, which I will use to show that one can, in principle, efficiently
+truncate the basis. The question of \textit{how} this can actually be done is still
+under investigation. I will present, however, a code which carries out the 
+coupling and give our results to date. While the project of efficiently calculating
+nuclear properties using a truncated basis is not yet complete, I can
+demonstrate significant progress towards it.
+
+\section{Mathematical Background}
+In this and the following section I give a brief introduction to the mathematical underpinning
+of the nuclear many body problem. I assume an understanding of undergraduate quantum 
+mechanics.
+
+Nuclear physics is essentially a quantum 
+many-body problem and much of nuclear physics can be explained by the 
+(non-relativistic) N-body Schr\"{o}dinger equation:
+\begin{equation}\label{tid}
+	\hat{H}\Psi(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N)=E\Psi(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N).
+\end{equation}	
+Here $\hat{H}$ is the Hamiltonian, which includes kinetic energy 
+and potential energy terms for each particle. The potential energy contains the 
+nuclear interaction and/or other relevant 
+interactions like the Coulomb force\cite{Johnson13}. $\Psi$ is our wave-function,  
+a function of the position of every particle in the system. 
+If we could solve the Schr\"{o}dinger equation for every system, the task of the 
+theoretical nuclear physicist would be complete. However, in general, there is 
+no analytic solution to (\ref{tid}) except for in a very small number of cases involving 
+a great deal of symmetry and a small number of particles. In any practical situation 
+where calculations of realistic nuclear structure are required, numerical methods are necessary. 
+
+Towards this end, let's review the matrix formulation of quantum mechanics. 
+Let us start with an eigenvalue equation of the form
+\begin{equation}\label{hepe}
+	\hat{H}\ket{\Psi}=E\ket{\Psi}.
+\end{equation}
+$\hat{H}$ is a Hermitian operator on a Hilbert space $\mathcal{H}$ and $\ket{\Psi}$ is 
+a state vector which is a member of the 
+Hilbert space. (A Hilbert space is a vector space with an inner product
+that is complete in the norm)\cite{Hall}. By definition, any basis 
+$\{\ket{\alpha}\}$ must satisfy the completeness relation
+\begin{equation}
+1 = \sum_\alpha \ket{\alpha}\bra{\alpha},
+\end{equation}
+thus any state vector $\ket{\Psi}$ can be expressed as the following, where 
+$\Psi_\alpha \equiv \braket{\alpha}{\Psi}$
+\begin{equation}
+	\ket{\Psi} = \sum_\alpha \Psi_\alpha \ket{\alpha}.
+\end{equation}
+For this to be meaningful we will eventually need to choose a particular basis 
+to work in. Starting again from (\ref{hepe}) and substituting this representation 
+of our eigenstate,
+\begin{equation}\begin{split}	
+        \hat{H}\sum_\alpha \Psi_\alpha\ket{\alpha} = E\sum_\alpha \Psi_\alpha\ket{\alpha}
+\end{split}\end{equation}
+and projecting onto a dual basis state $\bra{\beta}$       
+\begin{equation}\begin{split}
+	\bra{\beta}\hat{H}\sum_\alpha \Psi_\alpha\ket{\alpha} &= \bra{\beta}E\sum_\alpha \Psi_\alpha \ket{\alpha} \\
+        \sum_\alpha \bra{\beta}\hat{H}\ket{\alpha}\Psi_\alpha &= \sum_\alpha \braket{\beta}{\alpha} E\Psi_\alpha \\
+        \sum_\alpha H_{\beta\alpha} \Psi_\alpha &= E\Psi_\beta,
+\end{split}\end{equation}
+where the matrix elements of $\hat{H}$ are defined to be
+\begin{equation}
+	H_{\beta\alpha} \equiv \bra{\beta}\hat{H}\ket{\alpha}.
+\end{equation}
+
+Now that we have represented the Schrodinger equation as a matrix eigenvalue problem, 
+it becomes in principle straightforward to obtain important results such 
+as the energy spectra and transition probabilities of nuclei: simply diagonalize
+the Hamiltonian matrix to obtain the energy spectrum (eigenvalues) and 
+wavefunctions (eigenvectors), which are used to compute observables such as
+transition probabilities.
+
+Complications include the fact there is really no way to write down a simple 
+analytic Hamiltonian for the nuclear force as there is for classical forces 
+such as electromagnetism. The nuclear force is fundamentally an exchange of mesons
+requiring quantum field theory to properly describe\cite{eisenberg}. 
+Furthermore, even once a  Hamiltonian is obtained, solving for its eigenvalues 
+can be a non-trivial computational problem, since the  dimensions of the space 
+can be in the many-billions. There are a number of popular computational 
+methods for solving the many-body Hamiltonian, of which the configuration 
+interaction method is an example. 
+
+\section{Slater Determinants} 
+A common practice in the configuration interaction model is to write the 
+many-body basis states $\{\ket{\alpha}\}$ used above in terms of anti-symmetrized 
+products of single-particle solutions to a single-particle Hamiltonian.
+ Let's explore what this means.  
+
+Because our wavefunctions $\Psi$ live in a vector space (more precisely, in a 
+Hilbert space) 
+we can always rewrite $\Psi$ in another basis of our choosing.
+\begin{equation}
+	\Psi(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N)=\sum_\alpha c_\alpha
+\Phi_\alpha(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N)
+\end{equation}
+This is an N-body wavefunction with $N$ sets of coordinates, one for each particle.
+The CI method is to choose our $\Phi$ to be a product of single-particle wave
+functions,
+\begin{equation}
+    \{ \phi_a \},\ a=1,...,d,
+\end{equation}
+where $d$ is the number of single-particle states. These single-particle 
+wavefunctions are chosen to be some convenient basis that will span the Hilbert 
+space of interest.  I will discuss the exact nature of the single-particle states
+in Section \ref{EISM}.
+The normalization integral of a product wavefunction is simply the product of 
+the integrals of each factor. However, since nuclei are composed of 
+fermions (spin-1/2 particles), we must have antisymmetric wavefunctions. 
+We therefore need the more complicated rule\cite{Dirac}:
+\begin{equation}\label{sld}
+	\Phi(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N)=\frac{1}{\sqrt{N!}}
+    \sum_{i_1,i_2,...,i_N}^N \epsilon_{i_1,i_2,...,i_N}\phi_1(\vec{r}_{i_1})
+    \phi_2(\vec{r}_{i_2})\phi_3(\vec{r}_{i_3})...\phi_d(\vec{r}_{i_N}),
+\end{equation}
+\textit{viz.} the determinant of the matrix defined by $[\phi_a(i_b)]$ 
+with a normalization factor, with index $a$ labeling the single-particle state 
+and index $i_b$ labeling the particle number. The antisymmetry is encoded in the Levi-Civita symbol 
+$\epsilon_{i_1,i_2,...,i_N}$\cite{Jeevanjee}. By defining our many-body wave-functions to be 
+determinants of single-particle wavefunctions we are guaranteed antisymmetric 
+many-body states. These specially constructed states are known as Slater determinants\cite{Wong}. 
+
+\section{Second Quantization}
+Occupation representation is an additional formalism that is used in our 
+representation of wavefunctions. Here 
+I will only state the relevant results of this so-called second quantization formalism. 
+Many-body basis states
+are no longer represented as the product of coordinate functions of single particle states.
+Instead, a basis of single-particle states is chosen, perhaps the same set
+$\{\phi_a\}$ as above, and the many-body states are represented in the abstract
+as
+\begin{equation}
+    \Psi(\vec{r}_1,\vec{r}_2,\vec{r}_3,...,\vec{r}_N)\to\Psi{\{n_\phi\}} = \ket{n_1,n_2...n_d},
+\end{equation}
+where $n_a$ is the number of particles in the state $\phi_a$. Without any additional
+structure, this representation lacks anti-symmetry; this is restored by representing
+the state $\ket{n_1,n_2...n_d}$ as the action of a series of operators on the vacuum
+state $\ket{0,0...0}$, or ``particle vacuum''. The operator which turns $\ket{0,0...0}$ into $\ket{1,0...0}$
+is called the creation operator, and the operator which turns $\ket{1,0...0}$ into
+$\ket{0,0...0}$ is called the annihilation operator. For fermions, these two generalized
+ladder operators are defined implicitly through their anti-commutation relations\cite{Waleka}:
+\begin{equation}\begin{split}
+    \{\hat{a}_i,\hat{a}^\dagger_j\}&\equiv\hat{a}_i\hat{a}^\dagger_j+\hat{a}^\dagger_j\hat{a}_i
+        =\delta_{ij}\\
+    \{\hat{a}_j,\hat{a}_j\}&=\{\hat{a}^\dagger_i,\hat{a}^\dagger_j\}=0
+\end{split}\end{equation}
+These anti-commutation relations encode the properties of systems of fermions:
+two fermions cannot occupy the same state, $(\hat{a}^\dagger_i)^2=0$, and 
+therefore the maximum occupancy of a state $\phi_i$ is one. Thus, 
+\begin{equation}\begin{split}
+    \hat{a}^\dagger_1 \ket{1,0,...,0} &= 0, \\
+    \hat{a}^\dagger_1 \ket{0,0,...,0} &= \ket{1,0,...,0},\\
+    \hat{a}_1 \ket{1,0,...,0} &= \ket{0,0,...,0}, \\
+    \hat{a}_1 \ket{0,0,...,0} &= 0,
+\end{split}\end{equation}
+and so on for any state $\ket{n_1,n_2...n_d}$. With this mathematically equivalent 
+structure, we can replace our Slater determinants (\ref{sld}) with occupation 
+representations using second quantization operators. Any many body state can
+now be written
+\begin{equation}\label{sld2}
+    \Phi = \ket{n_1,n_2...n_d} = (\hat{a}^\dagger_1)^{n_1}...(\hat{a}^\dagger_d)^{n_d}\ket{0,...,0}.
+\end{equation}
+Since each state's occupation $n_i$ is
+constrained to $0$ or $1$, many body states can be represented by bit strings. 
+For example\cite{Johnson18},
+\begin{equation}
+    \hat{a}^\dagger_1\hat{a}^\dagger_4\hat{a}^\dagger_5\hat{a}^\dagger_7\ket{0} = \ket{1457} = \to
+    1001101,
+\end{equation}
+where we are dealing with a four-body wavefunction in a basis with at least
+seven single-particle states, and where I have used $\ket{0}$ here in place of $\ket{0,...,0}$
+for brevity. This makes computer storage of wavefunctions trivial.
+ 
+It can be shown that one-body operators can be expressed in the second quantization
+formalism as\cite{Brussard}:
+\begin{equation}
+    \hat{O}=\sum_{ij}\bra{i}O\ket{j}\hat{a}^\dagger_i\hat{a}_j,
+\end{equation}
+where the sum is over all single-particle states. Similarly, two-body operators 
+can be expressed\cite{Brussard}:
+\begin{equation}
+    \hat{O}=\frac{1}{4}\sum_{ijkl}\bra{ij}O\ket{kl}\hat{a}^\dagger_i\hat{a}^\dagger_j\hat{a}_k\hat{a}_l.
+\end{equation}
+The factor of one-fourth comes from the fact that the sum is over all single-particle 
+states and would otherwise over count the number of (pairwise) interactions.
+The Hamiltonian may be rewritten using these representations:
+\begin{equation}\label{nuchamil}
+	\hat{H}=\sum_{i,j}\hat{a}^\dagger_i\bra{i}T\ket{j}\hat{a}_j
+    +\frac{1}{4}\sum_{i,j,k,l}\hat{a}^\dagger_i\hat{a}^\dagger_j\bra{ij}V\ket{kl}\hat{a}_l\hat{a}_k,
+\end{equation}
+where the first term represents the one-body interactions such as kinetic energy or the Coulomb 
+interaction with an external field, and the second term represents two-body interactions 
+(forces between interacting particles) and contains the nuclear force. This formalism is key to 
+the way this model is translated into powerful computer codes which can be used for a number 
+of different calculations. 
+
+\section{Effective Interactions and Shell Models}
+\label{EISM}
+A truly realistic model of the nucleus would necessarily involve the description of the exchange of 
+mesons\cite{eisenberg}. The basis of single particle states $\{\phi_a\}$ that 
+are used in shell model methods are instead taken to be time independent
+solutions to quantum potentials which attempt to reproduce the results of a
+full field theory.
+Some variation of a mean-field approximation is used to motivate the choice
+of single particle states.
+For example, this could be a harmonic oscillator, or the more sophisticated
+Woods-Saxon potential\cite{Brussard}. In both cases, and in all cases considered
+here, the defining single-particle potential is chosen to exhibit rotational invariance,
+resulting in states of good angular momentum. In fact we will always choose
+single particle states with good harmonic oscillator 
+quantum numbers: the radial quantum number $n$, the orbital angular momentum $l$,
+the total angular momentum $j$, the
+z-component of the angular momentum $j_z\equiv m$ and the parity quantum number
+$\pi$. Parity $\pi=(-1)^l$ and $m=-j,-j+1,...,j-1,j$. 
+
+It is common practice to use atomic spectroscopic notation to label the nuclear
+single-particle orbits (states). Here we will take the convention $nl_j$ where
+$l$ is replaced with the letters
+\begin{equation}\begin{split}
+       l &= 0,1,2,3,4,5,...\\
+         &= s,p,d,f,g,...
+\end{split}\end{equation}
+For example the first few low-lying levels of a harmonic oscillator-like single-particle
+potential are shown in Table \ref{spo}. (Degeneracy indicates the numbers of states with unique $m$ in each orbit $nl_j$.
+    Max fill indicates the sum of all degeneracies up to that orbit and is the maximum
+    number of nucleons of each species that can fill the space up to and including that orbit.). There is a distinction between an orbit $nl_j$ and a state which also includes the 
+z-component of the angular momentum $m$. An orbit labeled as $nl_j$ has $2j+1$ possible
+states since $m$ is restricted to $-j, -j+1, ..., j-1, j$. States within the same orbit are degenerate 
+in energy (at least in the absence of any external electromagnetic fields), with $2j+1$ being the
+degeneracy.
+\begin{table}
+    %\centering
+    \caption{Harmonic Oscillator States with Spin Orbit Coupling 
+    }
+    \label{spo}
+
+
+\begin{tabular}
+    {c c c c c c c c}
+    \hline 
+    \hline
+Orbit     & n & l & j   & m         & Parity & Degeneracy & Max fill  \\
+    \hline
+$0s_{1/2}$& 1 & 0 & 1/2 & 1/2, -1/2 & + & 2 & 2* \\
+    \hline
+$1p_{3/2}$& 1 & 1 & 3/2 & 3/2,...,-3/2 & - & 4 & 6 \\
+$1p_{1/2}$& 1 & 1 & 1/2 & 1/2, -1/2    & - & 2 & 8* \\
+    \hline
+$1d_{5/2}$& 1 & 2 & 5/2 & 5/2,...,-5/2 & + & 6  & 14   \\
+$2s_{1/2}$& 2 & 0 & 1/2 & 1/2, -1/2    & + & 2  & 16  \\
+$1d_{3/2}$& 1 & 2 & 3/2 & 3/2,...,-3/2 & + & 4  & 20*  \\
+    \hline
+$1f_{7/2}$& 1 & 3 & 7/2 & 7/2,...,-7/2 & - & 8 & 28* \\
+    \hline
+$2p_{3/2}$& 2 & 1 & 3/2 & 3/2,...,-3/2 & - & 4 & 32 \\
+$1f_{5/2}$& 1 & 3 & 5/2 & 5/2,...,-5/2 & - & 6 & 38 \\
+$2p_{1/2}$& 2 & 1 & 1/2 & 1/2,    -1/2 & - & 2 & 40 \\
+$1g_{9/2}$& 1 & 4 & 9/2 & 9/2,...,-9/2 & + & 10& 50* \\
+    \hline
+    \hline
+
+\end{tabular} 
+
+\end{table} 
+
+In the harmonic oscillator basis, there are an infinite number of single-particle
+states. We cannot keep track of an infinite number of states; this would require 
+bit string representations of our many-particle states that are infinitely long. 
+We therefore consider only a finite number of single-particle states, and leave out
+the rest. We leave out single-particle states which have a very 
+low probability of being occupied, as well as those with a very high occupation
+probability. This second statement may seem counter-intuitive. How can we ignore 
+states which are occupied? Because these states are assumed to always be occupied,
+we can account for their contribution to the single-particle energies
+and two-body interactions while leaving the states out of the active model space. 
+To determine which low-lying states are likely to always be filled, we rely on
+``magic numbers''.
+An important observational fact is that the binding energy of certain nuclei with certain 
+numbers of nucleons tend to be especially stable.
+Nuclei with 2, 8, 20, 28, 50, 82, or 126 protons or neutrons tend to have 
+a higher binding energy than nuclei with one proton or one neutron above these
+so called magic numbers \cite{Segre}. Magic numbers in Table \ref{spo} are marked
+with an asterisk. 
+
+In shell model codes, the vacuum state is redefined to be an inert core of nucleons, 
+and the model space to be a finite space of particle-hole excitations near a 
+Fermi surface\cite{Heyde}, usually determined by one of the magic numbers.
+Particles in the set of active, interacting nuclei occupy the ``valence'' space. 
+For example, we can imagine an inert core of 8 noninteracting protons and 8 noninteracting
+neutrons, which can be thought of as a frozen $^{16}$O nucleus. Then, orbiting above
+this core we can imagine a fixed number of interacting nucleons, valence protons and neutrons.
+If we restrict the number of valence protons and neutrons to between 0 and 12, then
+we can represent the entire valence space with just the $d_{3/2}$, $d_{5/2}$ and 
+$s_{1/2}$ orbitals. This is called the \textit{sd}-shell model space because the s($l=0$) and d($l=2$) 
+orbital quantum numbers are all that appear in the truncated model space. All
+quantum numbers for this single-particle model space are shown in Table \ref{table: sd.spo}.
+(These
+    orbits lie directly above an inert core of 8 protons and 8 neutrons and can
+    support up to 12 valence protons and 12 valence neutrons. Each orbit has $2j+1$ 
+    possible values of $m$, this is the degeneracy.
+    The rightmost column indicates the maximum number of particles that could fill
+    the model space up to that orbit.)
+The overall effect of the inert $^{16}$O core is to add an effective energy to 
+Hamiltonian.\cite{Heyde}.   
+
+\begin{table}
+    \caption{\textit{sd}-Shell Single Particle Orbits}
+    \label{table: sd.spo}
+%\centering
+\begin{tabular}
+    {c c c c c c c}
+    \hline 
+    \hline
+Orbit & l & j & m & Degeneracy & Max fill  \\
+    \hline
+$d_{3/2}$      & 2 & 3/2  & 3/2, 1/2, -1/2, -3/2            & 4  & 4   \\
+$d_{5/2}$      & 2 & 5/2  & 5/2, 3/2, 1/2, -1/2, -3/2, -5/2 & 6  & 10  \\
+$s_{1/2}$      & 0 & 1/2  & 1/2, -1/2                       & 2  & 12  \\
+    \hline
+    \hline
+\end{tabular}
+
+\end{table} 
+
+Another common space that we will be using is the $f_{7/2}$, $p_{3/2}$, $f_{5/2}$, and $p_{1/2}$ model space, 
+often referred to as the pf-shell model space. The single-particle orbits 
+for this space are given in Table \ref{table: fp.spo}. (Same conventions as in Table
+\ref{table: sd.spo}. This model space has an inert core of 20 protons and 20 neutrons
+and has 20 unique proton and 20 unique neutron states.)
+
+\begin{table}
+    \caption{\textit{pf}-Shell Single Particle Orbits }
+    \label{table: fp.spo}
+%\centering
+\begin{tabular}
+    {c c c c c c c}
+    \hline 
+    \hline
+Orbit & n & l & j & m & Degeneracy & Max fill  \\
+    \hline
+$1f_{7/2}$    & 1  & 3 & 7/2  & 7/2, ..., -7/2      & 8  & 8   \\
+$2p_{3/2}$    & 2  & 1 & 3/2  & 3/2, 1/2, -1/2, -3/2& 4  & 12  \\
+$1f_{5/2}$    & 1  & 3 & 5/2  & 5/2, ..., -5/2      & 6  & 18  \\
+$2p_{1/2}$    & 2  & 1 & 1/2  & 1/2, -1/2           & 2  & 20    \\
+    \hline
+    \hline
+\end{tabular}
+\end{table} 
+
+To account for the state left out of the model space,  
+an effective two-body interaction can be computed. By enforcing that the 
+effective interaction acting on the model wavefunction reproduces the same
+results as the full interaction on the full wavefunction, one can 
+expand the effective interaction into a series of the form\cite{Heyde}
+\begin{equation}\label{eff}
+    V^{eff} = V + V\frac{\hat{Q}}{E - H_0}V + ...
+\end{equation}
+where $\hat{Q}$ is a projection operator onto the part of the full Hilbert space
+that was left out of the model. 
+
+In our work we rely on commonly used effective two-body interactions computed by others,
+such as the Universal \textit{sd}-shell interaction version B (USDB)\cite{usdb}. This interaction is not derived using an expansion 
+like (\ref{eff}), however. The USDB interaction and others like it are phenomenological
+interactions, meaning that it may have started from an effective calculation like
+equation (\ref{eff}), but then matrix elements were tuned in order to give better
+fits to widely available measured masses and resonance energies (e.g. from the National Nuclear Data Center (NNDC))\cite{nndc}. The USDB interaction 
+and other widely used interaction matrix elements are lists of quantities of the form
+\begin{equation}
+    \bra{i,j}V\ket{k,l},
+\end{equation}
+as appears in equation (\ref{nuchamil}). 
+
+\section{Bringing it All Together: the Interacting Shell Model}
+
+To construct a many-body basis in the interacting shell model, we begin with 
+a shell model space. I will use the \textit{sd}-shell model space to illustrate
+the development of this section. This model space has an inert core of
+8 protons and 8 neutrons. The contribution from these inactive particles is accounted
+for in the single-particle energies and two-body matrix elements of the Hamiltonian. 
+We have three single particle orbits ($d_{3/2}$, $d_{5/2}$, and $s_{1/2}$), 
+each with a $2j+1$ degeneracy. 
+We often assume that protons and neutrons have the same set of single-particle orbits.
+Each orbit has a single-particle energy associated with it. Given the degeneracy of each orbit, 
+we have $12$ possible single-particle states, as shown in Table \ref{sdstates}.
+These single-particle states span the valence space, that is, the space of 
+all possible single-particle wavefunctions within the \textit{sd}-shell model space.
+Many-particle wavefunctions, i.e. proton or neutron Slater determinants, can be represented with a 
+bit string twelve bits long. If there are $N$ fermions of a given species in the model space,
+then there are $_{12}C_N$ (twelve choose N) possible Slater determinants. For 
+example, a state with three protons (or neutrons) could be
+\begin{equation}\label{slaterex}
+    \hat{a}_1^\dagger\hat{a}_2^\dagger\hat{a}_3^\dagger\ket{0} = \ket{123} = \ket{111000000000} \to 111000000000,
+\end{equation}
+but there are $_{12}C_3=220$ possible 3-nucleon Slater determinants, many of 
+them degenerate in energy.
+The single-particle energy of such a state (i.e. ignoring nucleon-nucleon interactions) would be
+the sum of the single-particle energies of each nucleon.
+
+\begin{table}[h]
+
+    \caption{\textit{sd}-Shell Single-particle States}
+    \label{sdstates}
+%\centering
+\begin{tabular}
+    {c c c c c c c c}
+    \hline 
+    \hline
+State \# & Orbit & l & $\pi$ (Parity) & j & m \\
+1       & $d_{3/2}$ & 2 & + & 3/2 & +3/2 \\
+2       & $d_{3/2}$ & 2 & + & 3/2 & +1/2 \\
+3       & $d_{3/2}$ & 2 & + & 3/2 & -1/2 \\
+4       & $d_{3/2}$ & 2 & + & 3/2 & -3/2 \\
+5       & $d_{5/2}$ & 2 & + & 5/2 & +5/2 \\
+6       & $d_{5/2}$ & 2 & + & 5/2 & +3/2 \\
+7       & $d_{5/2}$ & 2 & + & 5/2 & +1/2 \\
+8       & $d_{5/2}$ & 2 & + & 5/2 & -1/2 \\
+9       & $d_{5/2}$ & 2 & + & 5/2 & -3/2 \\
+10      & $d_{5/2}$ & 2 & + & 5/2 & -5/2 \\
+11      & $s_{1/2}$ & 0 & + & 1/2 & +1/2 \\
+12      & $s_{1/2}$ & 0 & + & 1/2 & -1/2 \\
+    \hline
+    \hline
+\end{tabular}
+
+\end{table} 
+
+Equation (\ref{slaterex}) is a many-proton or many-neutron Slater determinant. The
+wavefunction of an atomic nucleus, containing both protons and neutrons, is 
+constructed by coupling together proton and neutron Slater determinants:
+\begin{equation}\label{abasis}
+    \ket{\alpha} = \ket{j_p,m_p}\otimes\ket{j_nm_n},
+\end{equation}
+where $\ket{j_p,m_p}=(\hat{a}^\dagger_1)^{n_1}...(\hat{a}^\dagger_d)^{n_d}\ket{0,...,0}$ 
+is a particular proton Slater determinant such as (\ref{slaterex}), and similarly 
+for the many-neutron state $\ket{j_n,m_n}$. 
+
+The number of nuclear Slater determinants can quickly become very large.
+The \textit{sd}-shell model space, with 12 single-particle states, has a maximum
+of $_{12}C_6=924$ single-species Slater determinants, for a maximum of $924^2=853776$
+proton-neutron Slater determinants. Fortunately, symmetries of the Hamiltonian,
+specifically selection rules for quantum numbers allow us to ignore certain 
+combinations of these states, allowing us to reduce the overall size of the basis.
+If the Hamiltonian is rotationally invariant, then
+both the total angular momentum operator $\hat{J}^2$ and the z-component of angular
+momentum operator $\hat{J}_z$ commute with the Hamiltonian. This makes choices 
+of basis where either $J$ or $J_z=M$ is held constant for all basis states convenient\cite{Johnson13},
+since for any coupled basis states $\ket{\alpha,M_j}$ with good total $M$
+\begin{equation}
+    \bra{\beta,M_\beta}\hat{H}\ket{\alpha,M_\alpha} = 0,
+\end{equation}
+whenever $M_\alpha\neq M_\beta$. This holds true for states of fixed $J$ as well, but in general
+this is less convenient because whereas $M$ is an additive quantum number,
+$J$ is not and requires more cumbersome combinations of Slater determinants\cite{Johnson13}.
+Therefore for (\ref{abasis}) we often choose the so-called M-scheme basis where
+basis states are coupled up to good $M$:
+\begin{equation}
+    \ket{\alpha} = [\ket{j_pm_p}\otimes\ket{j_nm_n}]_M \equiv \ket{j_pj_n;M},
+\end{equation}
+where $M=m_p+m_n$. In terms of our bit representations this means selecting to 
+combine proton slater determinants with neutron Slater determinants that will
+result in fixed total $M$. For example, an atomic nucleus in the \textit{sd}-shell
+model space with a single valence proton and a single valence neutron (i.e. $^{18}$F)
+for $M=0$ can only have coupled Slater determinants such as 
+\begin{equation}\begin{split}
+    \ket{1}\otimes\ket{4}=\ket{j_p=3/2,m_p=+3/2}&\otimes\ket{j_n=3/2,m_n=-3/2},\\
+    \ket{4}\otimes\ket{1}=\ket{j_p=3/2,m_p=-3/2}&\otimes\ket{j_n=3/2,m_n=+3/2},\\
+    \ket{2}\otimes\ket{3}=\ket{j_p=3/2,m_p=+1/2}&\otimes\ket{j_n=3/2,m_n=-1/2},\\
+    \ket{3}\otimes\ket{2}=\ket{j_p=3/2,m_p=-1/2}&\otimes\ket{j_n=3/2,m_n=+1/2},\\
+\end{split}\end{equation}
+etc., where $\ket{i}$ is a single particle occupying the $i^{th}$ single-particle 
+state in Table \ref{sdstates}. In total there are $28$ possible $M=0$ coupled
+Slater determinants for $^{18}$F in the \textit{sd}-shell model space, translating
+to a basis and Hamiltonian matrix with a dimension of $28$. 
+
+The M-scheme is highly advantageous. However, if we wish to truncate the basis,
+the J-scheme becomes preferable. I will explain this in detail in a later chapter, 
+after justifying the need for a truncation of the basis.
+
+
+
+
+
+ 
+

@@ -1,0 +1,180 @@
+\chapter{COMPUTATION}
+\label{chap:computation}
+
+PNISM is a post processing code for BIGSTICK and relies on results from BIGSTICK
+in order to compute nuclear wavefunctions. Johnson wrote the majority of the 
+subroutines responsible for reading 
+in formatted results from BIGSTICK output files, as well as for constructing the 
+basis. I aided in a few bug fixes in the modules responsible for reading in the density matrices
+(see "Challenges and Speedup"). I then wrote the majority of the code responsible
+for computing the proton-neutron-coupled-Hamiltonian $H_{pn}$, for solving the
+Hamiltonian, for computing the density matrices, and for writing the results to file.
+In this section I outline the flow of information and the algorithms and 
+computations carried out. I leave out most of the theoretical details, as this 
+is discussed in previous chapters, and focus on the computation.
+
+The explicit proton-neutron formalism Hamiltonian is
+\begin{equation}
+    H = H_p + H_{pp} + H_n + H_{nn} + H_{pn}.
+\end{equation}
+BIGSTICK is used to solve $H_p + H_{pp}$ and $H_n + H_{nn}$ independently, before the 
+PNISM runtime. Then PNISM reads in the following:
+\begin{itemize}[nolistsep]
+    \item The single particle orbit space 
+    \item The two-body matrix elements $\bra{ab,JT}V\ket{cd,JT}$
+    \item The energy levels and quantum numbers from both $H_p + H_{pp}$ and $H_n + H_{nn}$
+    \item The density matrices from both $H_p + H_{pp}$ and $H_n + H_{nn}$,
+        from solutions of different $M\equiv J_z$ values
+\end{itemize}
+After reading the all of the necessary resources, PNISM creates the basis by
+coupling the eigenstates of $H_p + H_{pp}$ and $H_n + H_{nn}$ up to states with
+good total angular momentum. Then, the array containing $W_K(ac,bd)$ is computed
+from the two-body matrix elements and with six-J symbols which are either computed
+on the fly or read in from a table stored on disk. Then, the largest portion of 
+runtime takes place when the Hamiltonian matrix elements are computed using the
+diagonalized matrix elements of $H_p + H_{pp}$ and $H_n + H_{nn}$, the 
+array containing $W_K(ac,bd)$, the density matrices of $H_p + H_{pp}$ and $H_n + H_{nn}$,
+and again the six-J symbols. PNISM then diagonalizes the Hamiltonian matrix,
+thus solving the many-body Schrodinger equation. The resulting quantum numbers
+and eigenvectors are used to calculate the one-body density matrices and the
+results are written to a file in the same format as would be produced by BIGSTICK.
+
+\section{Reading in Density Matrices}
+PNISM must read in multiple solutions from BIGSTICK for the same proton/neutron
+configuration because BIGSTICK is an M-scheme code. A solution for a given $M$
+value will have some number of zero density matrix elements due to 
+symmetries in the Clebsch-Gordan coefficients. Density matrices from BIGSTICK
+are actually reduced density matrices. A reduced matrix element of a tensor
+operator is a way to represent the matrix element of an operator without regard
+to the orientation in space. This is accomplished with the Wigner-Eckart theorem
+\cite{Edmonds}: for a tensor operator $\hat{O}_KM$,
+\begin{equation}\begin{split}\label{eqn: wigner}
+    \bra{J_fM_f}\hat{O}_{KM}\ket{J_iM_i} &= 
+        [J_f]^{-1}(J_iM_iKM|J_fM_f)\bra{J_f}\hat{O}_k\ket{J_i} \\
+    &= (-1)^{J_f-M_f}\begin{Bmatrix} J_f & K & J_i \\ -M_f & M_K & M_i \end{Bmatrix}
+        \bra{J_f}\hat{O}_k\ket{J_i},
+\end{split}\end{equation}
+where $[j] \equiv \sqrt{2j+1}$ and the six-argument array is the six-J symbol. 
+$\bra{J_f}\hat{O}_k\ket{J_i}$ are the reduced density matrix elements of 
+$\bra{J_fM_f}\hat{O}_{KM}\ket{J_iM_i}$.
+A basic symmetry of vector coupling coefficients is\cite{Edmonds}
+\begin{equation}\label{eqn: vcphase}
+    (j_a m_a j_b m_b | J M) = (-1)^{j_a+j_b-J}(j_bm_bj_am_a|JM)
+\end{equation}
+It can be shown by applying time reversal symmetries to equation (\ref{eqn: vcphase})
+that\cite{Edmonds}
+\begin{equation}
+    (j_a m_a j_b m_b | J M) = (-1)^{j_a+j_b-J}(j_a -m_a j_b -m_b | J -M).
+\end{equation}
+Thus if $m_a=m_b=M=0$ and $j_a+j_b-J$ is odd, the coefficient must be zero. This creates a problem for some
+of
+our reduced density matrices since we divide by this quantity. To recover the 
+missing density matrix elements, we simply recompute $H_p + H_{pp}$ and $H_n + H_{nn}$
+for another value of $M$. In practice, only $M=0$ and $M=1$ solutions are
+required to obtain nearly the entire solution. PNISM will only read in nonzero
+density matrix elements.
+
+$M=1$ basis states cannot have $J=0$ total angular momentum (the total angular momentum
+can't be less than its z-component). Thus $M=1$ solutions from BIGSTICK are missing
+all $J=0$ solutions. It is therefore necessary to read in $M=0$ solutions first
+when setting up the basis. The overall phase of the density matrix elements first
+read in are taken to be the convention. 
+An important obstacle that had to be overcome resulted from an ambiguity of quantum
+mechanics. When solving the Schrodinger equation, the overall sign of the wavefunction
+is not important, since it does not affect any observables. However, the relative 
+phase between two wavefunctions is important, so 
+care must be taken to establish self consistent phases. Because PNISM inputs solutions
+from BIGSTICK, the phase between two separate solutions, say, for two different
+$J_z \equiv M$ values (BIGSTICK is an M-scheme code) can differ. It is vital to check 
+the relative phase between density matrices from different choices of $M$. Neglecting 
+this will result in unforeseen cancellations and a failure to correctly recreate the 
+Hamiltonian. After the initial density matrix that PNISM reads in, new density matrix 
+elements for a given basis state combination are compared against density 
+matrix elements that have already been read in. If an inconsistent phase is 
+encountered, the read in is restarted for that basis state combination and the 
+phase is adjusted accordingly.
+
+\section{Symmetries}
+A number of basic symmetry relations were used to speed up calculations, the most
+obvious symmetry being the Hermiticity of the Hamiltonian matrix elements. After
+basic testing, only the diagonal and upper triangular portion of the Hamiltonian 
+is computed independently. The remaining matrix elements are then copied over
+across the diagonal. 
+
+The proton-neutron potential factor $W_{K}(ac,bd)$ 
+which appears in equation (\ref{eqn: wmat}) has a similar symmetry:
+\begin{equation}
+    W_K(ac,bd) = (-1)^{j_a+j_d-j_b-j_c}W_K(ca,db),
+\end{equation}
+which is used to compute all iterations over $a$ and $c$ by computing
+only the $c\leq a$ matrix elements. Another but slightly less trivial 
+method was used to compute the one-body 
+density matrices. The one-body density matrices respect the so called
+time reversal symmetry:
+\begin{equation}\label{eqn: trs}
+     \bra{\Psi_f} [\hat{c}^\dagger_a\otimes \hat{c}_b]_k \ket{\Psi_i} = 
+        (-1)^{j_a-j_b+j_i-j_f}\bra{\Psi_i}
+            [\hat{c}^\dagger_b\otimes \hat{c}_a]_k \ket{\Psi_f}
+\end{equation}
+This means that we only need to compute the upper triangular (in the a,b indices)
+elements of the one-body density matrices. The rest can be computed via the relation
+given in (\ref{eqn: trs}). 
+
+\section{Numerical Methods}
+The primary eigensolver used in PNISM is SSYSEV from the LAPACK library\cite{LAPACK}. PNISM
+has the option to either use SSYEV directly, or to use a custom Lanczos solver.
+The Lanczos solver is useful when only extremal eigenstates are sought.
+The Lanczos solver uses a straightforward lanczos iteration subroutine written by
+another graduate student, Ryan Zbikowski. The Lanczos method is discussed in Appendix
+A. In my implementation, I use an iterative
+process to incrementally increase the number of Lanczos iterations until 
+some fixed number of eigenvalues converges. Convergence is measured by a somewhat
+crude criterion:
+\begin{equation}
+    Crit = \frac{1}{N_{keep}-1}\sum_{i=1}^{N_{keep}} |\lambda_i^{Current}-\lambda_i^{Previous}|.
+\end{equation}
+Here, $\lambda_i$ are the first $N_{keep}$ eigenvalues produced by solving the 
+Lanczos matrix. The process is said to have converged when the value of $Crit$ 
+falls below some constant. In PNISM the value $0.001$ is used. This is a similar 
+convergence criterion to that used in BIGSTICK and empirical tests show that it converges to the
+correct values.
+
+In some cases where the total dimension of the matrix is small compared to the 
+number $N_{keep}$, the $Crit$ value will fail to become small enough, even when
+the number of lanczos iterations is maximum (equal to the dimension of
+the matrix). When this happens an flag is thrown and the code runs SSYEV instead.
+
+\section{Challenges and Speedups}
+
+
+Computing the matrix elements of the Hamiltonian in PNISM takes most of the 
+overall runtime. Several actions were take to help reduce this runtime. Using
+the Unix profiling tool GPROF, I found that a large percentage of compute time
+was used in calling the function used to compute Six-J symbols, a function with 
+six arguments and calls to other subfunctions within an external library. In order
+ to reduce the time used computing six-J symbols, I wrote a small code to create
+a table of six-J tables called sj2i.f90. The code asks the user for six inputs,
+the six maximum value of angular momentum, $J_{max}$, to compute the six-J symbol for. 
+The six-J symbols are then computed for all combinations of argument values from zero
+to Jmax and written to a file with the following format:
+\begin{verbatim}
+    j1 j2 j3 j4 j5 j6 six-j(j1,j2,j3,j4,j5,j6)
+\end{verbatim}
+In order to save disk space and I/O time, the file is written as an 'unformatted', 
+non-ASCII file. Before any computation, PNISM reads the contents of the file into
+an array:
+\begin{verbatim}
+    sj2i_table(j1+1,j2+1,j3+1,j4+1,j5+1,j6+1) 
+                            = six-j(j1,j2,j3,j4,j5,j6)
+\end{verbatim}
+
+At the time when this document was written, the entire Hamiltonian for all total
+J values is computed sequentially, and then solved afterward. This is a waste of 
+memory since each total J Hamiltonian is independent and can be solved before the
+next is computed and committed to memory. A future project will be to solve
+each matrix as soon as it is computed. This should reduce the maximum memory requirements
+by approximately a factor equal to the total number of total-J values requested,
+i.e. if computing J-total from $0$ to $10$ then as much as one-tenth the total 
+memory will be required with little cost to runtime.
+
+

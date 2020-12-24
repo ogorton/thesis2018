@@ -1,0 +1,73 @@
+\chapter{CONCLUSION AND FUTURE WORK}
+\label{chap:conclusion}
+
+This thesis was a study of proton-neutron entanglement entropy and the 
+presentation of a new interaction shell model code, PNISM. It was shown 
+that the proton-neutron entanglement entropy is inversely correlated
+with the isospin of a atomic nuclei. 
+This hypothesis was further supported by a decomposition of nuclear 
+wavefunctions into pure proton and pure neutron eigenstates, which 
+fall off exponentially. The fact that nuclei with greater isospin
+appear to have weaker proton-neutron coupling suggests that heavier
+nuclei with high isospin could be computed with even greater efficiency 
+using this truncation scheme. 
+
+We wrote a J-scheme interacting shell model code which takes proton wavefunctions
+and neutron wavefunctions and creates a truncated basis of coupled proton
+and neutron wavefunctions. The nuclear Hamiltonian is computed in this basis
+and solved using standard numerical techniques. The ground state energy 
+and wavefunctions converge exponentially to those of the full model space.
+The results for three nuclei in the ($p_{1/2}$, $p_{3/2}$, $f_{5/2}$, $f_{7/2}$) model space, which would normally 
+require a supercomputer to solve, were computed using PNISM running on 
+a laptop. Results are not satisfactory and further research will need to be done to 
+improve convergence. Eventually we would like be able to compute nuclei with full model
+space dimensions in the billions using truncated model spaces in 
+PNISM; however we are still working on some bugs to do with 
+model spaces with more than one parity. 
+
+In the future we will need to make changes to the code to improve convergence.
+The model presented here is the simplest version in that basis states are
+selected from the lowest eigenstates of the proton and neutron Hamiltonians.
+This could be improved by introducing effective single-particle energies
+to account for the contribution from the remaining states which were left out,
+perhaps through some mean-field approximation.
+
+In the current version, PNISM computes the entire set of Hamiltonian matrix
+elements before diagonalizing. Memory utilization could be greatly improved
+by diagonalizing the Hamiltonian after completing each value of total angular
+momentum. This is possible since PNISM is a J-scheme code; matrix elements between states with
+different total $J$ are independent. Here is a pseudo-code depiction of the current
+procedure:
+\begin{verbatim}
+    DO J = JMIN, JMAX
+        COMPUTE <AB,J| H |CD,J>
+    END DO
+    DO J = JMIN, JMAX
+        DIAGONALIZE <AB,J| H |CD,J>
+    END DO
+    DEALLOCATE <AB,J| H |CD,J>
+\end{verbatim}
+The problem being that this requires storing the entire Hamiltonian in memory
+before diagonalizing and writing to disk the much smaller set of truncated 
+eigenstates and quantum numbers. If instead we use the following procedure:
+\begin{verbatim}
+    DO J = JMIN, JMAX
+        COMPUTE <AB,J| H |CD,J>
+        DIAGONALIZE <AB,J| H |CD,J>
+        DEALLOCATE <AB,J| H |CD,J>
+    END DO
+\end{verbatim}
+then we can expect a reduction in the total memory resources required by 
+a factor that scales like the number of $J$ states required. While simple 
+in principle, this will require a nontrivial restructuring of the 
+code.
+
+This reorganization of the code would also be compatible with a hybrid 
+implementation of MPI\cite{mpi} and openMP\cite{openmp}. MPI is a 
+distributed memory message passing interface commonly used for
+parallelization. MPI will be called to distribute iterations
+of the loop over $J$ values to various nodes of a cluster.
+Each node, being assigned some allotment of work, will 
+create numerous threads using openMP, a shared memory
+multi-processing programming interface. If only one node is
+available, then creation of openMP threads will be preferred.

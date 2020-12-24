@@ -1,0 +1,481 @@
+\chapter{PNISM}
+\label{chap:PNISM}
+
+% By labeling the chapter, I can refer to it later using the
+% label. (\ref{chap:intro}, \pageref{chap:intro}) Latex will take care
+% of the numbering.
+Finally, we turn to the main subject of this thesis, our Proton-Neutron Interacting
+Shell Model (PNISM) code. We are motivated by the results of the previous chapters; 
+it is known that SVD eigenvalues of wavefunction coefficients fall off exponentially,
+and we have seen that they fall off even faster in nuclei with unequal numbers
+of protons and neutrons. We also argued that the basis states formed from
+the eigenstates of the proton interaction and the neutron interaction could likely
+allow for truncated wavefunctions. We have reason to believe that truncation of 
+the model space in a weakly coupled proton-neutron basis might be an especially effective
+approximation for heavier nuclei with more neutrons than protons. 
+We set out to write a code that couples together eigenstates of the proton Hamiltonian and 
+eigenstates of the neutron Hamiltonian to create a many-proton many-neutron basis.
+The matrix elements of the full Hamiltonian are then computed in this basis, which is
+truncated.
+
+This chapter will derive the equations used to carry out the calculation of the
+Hamiltonian matrix elements from the eigenstates computed by the interacting 
+shell model code BIGSTICK. Calculation of the one-body density matrices of the
+resulting wavefunctions is also discussed. The following chapter will discuss
+the details of the code itself.
+
+\section{The Hamiltonian}
+We write the nuclear Hamiltonian in explicit proton-neutron formalism. The 
+Hamiltonian operator in the second quantization formalism,
+\begin{equation}
+	\hat{H}=\sum_{ab}\bra{a}T\ket{b}\hat{c}^\dagger_a\hat{c}_b
+    +\frac{1}{4}\sum_{abcd}\bra{ab}V\ket{cd}\hat{c}^\dagger_a\hat{c}^\dagger_b\hat{c}_c\hat{c}_d,
+\end{equation}
+can be written as a sum of terms separated by nucleon species\cite{Johnson13}:
+\begin{equation}\label{sep}
+    \hat{H} = \hat{H}_p + \hat{H}_n + \hat{H}_{pp} + \hat{H}_{nn} + \hat{H}_{pn},
+\end{equation}
+where $\hat{H}_p$ and $\hat{H}_{pp}$ are one- and two-body Hamiltonians, respectively, which act
+only on protons, $\hat{H}_n$ and $\hat{H}_{nn}$ act only on neutrons, and $\hat{H}_{pn}$
+contains the remaining interactions between proton and neutrons. 
+To this end, it is useful to define the two body creation operator\cite{Schuck}:
+\begin{equation}
+    \hat{A}_{JM}^\dagger(ab)\equiv [c_a^\dagger \otimes c_b ^\dagger]_{JM}
+\end{equation}
+Here, the total angular momentum $J$ and the azimuthal or magnetic quantum number 
+$M=J_z$ are needed for the coupling of the two one-body creation operators, 
+via Clebsch-Gordan coefficients\cite{Edmonds}:
+\begin{equation}
+    [c_a^\dagger \otimes c_b ^\dagger]_{JM} = 
+        \sum_{m_am_b} (j_am_a, j_bm_b|JM)\hat{c}^\dagger_{j_am_a}
+        \hat{c}^\dagger_{j_bm_b}.
+\end{equation}
+The two-body creation and annihilation operators\cite{Feshbach} with fixed $J$ and $M$ are thus, respectively:
+\begin{equation}\begin{split}\label{pairs}
+    & A^\dagger_{JM} = \sum_{m_am_b} (j_a m_a, j_b m_b | JM ) c^\dagger_{j_am_a} 
+c^\dagger_{j_bm_b}, \textrm{ and} \\
+    & A_{JM} = \sum_{m_cm_d} (j_c m_c, j_d m_d | JM ) c_{j_cm_c} c_{j_dm_d}.
+\end{split}\end{equation}
+These will be used later in the derivation of the proton-neutron interaction
+matrix elements.
+With these definitions, two-body states with proper normalization are\cite{Brussard}
+\begin{equation}
+    \ket{ab; JM} \equiv \frac{1}{\sqrt{1+\delta_{ab}}}
+       \hat{A}^\dagger_{JM}(ab)\ket{0}.
+\end{equation}
+The two-body part of the Hamiltonian is thus expressed
+\begin{equation}\begin{split}
+    \hat{H_{2b}} &= \sum_{abcd}{c}^\dagger_a{c}^\dagger_b\bra{ab}V\ket{cd}
+        \hat{c}_c\hat{c}_d \\
+    &= \frac{1}{4}\sum_{abcd}\zeta_{ab}\zeta_{cd}
+    \sum_{J}\bra{ab;JM}V\ket{cd;JM}\sum_{M}{A}^\dagger_{JM}(ab){A}_{JM}(cd)
+\end{split}\end{equation}
+where $\zeta_{ab}\equiv\sqrt{(1+\delta_{ab})}$.
+Our next move is to change to an explicit proton-neutron decomposition.
+This can be done by using the states $\frac{1}{\sqrt{2}}
+(\ket{\pi\nu}-\ket{\nu\pi})$, $\frac{1}{2}(\ket{\pi\nu}+\ket{\nu\pi})$,$\ket{\pi\pi}
+$, and $\ket{\nu\nu}$ to isolate operators by the nucleon species on which they act. 
+The result is the following proton-proton two-body interaction:
+\begin{equation}\begin{split}
+    \hat{H}_{pp} =
+    \frac{1}{4}\sum_{abcd}\zeta_{ab}\zeta_{cd}
+    \sum_{J}V_{J}^{pp}(ab,cd)\sum_{M}\hat{A}^\dagger_{JM}(a_\pi b_\pi)\hat{A}_{JM}(c_\pi d_\pi).
+\end{split}\end{equation}
+$\hat{H}_{nn}$ has the same form. We will not use these directly but it is 
+useful to see how the interaction is separated. The proton-neutron interaction is
+the only term that will be used directly in our code:
+\begin{equation} \label{eqn: hpn}
+    H_{pn} = \sum_{abcd}\sum_J V_J^{(pn)}(ab,cd) 
+\sum_M A_{JM}^\dagger(a_\pi b_\nu) A_{JM}(c_\pi d_\nu).
+\end{equation}
+
+
+\section{The Basis}
+We have a Hamiltonian of the form (\ref{sep}) and in order to compute its matrix
+elements, we need to choose a basis, one which we hope we can truncate effectively. In this
+section I will explain our choice of basis and how we select which states to truncate.
+In the future we will want to develop a more sophisticated approximation scheme to 
+improve our results. 
+For now we first solve
+\begin{equation}\begin{split}\label{ppnnsol}
+    (\hat{H}_p + \hat{H}_{pp})\ket{\Psi_p}&= E_p\ket{\Psi_p} \textrm{ and}\\
+    (\hat{H}_n+H_{nn})\ket{\Psi_n}&=E_n\ket{\Psi_n},
+\end{split}\end{equation}
+and set our uncoupled basis states equal to the solutions:
+\begin{equation}\begin{split}\label{plusminus}
+    \ket{J_p^{\pi_p},\alpha_p}&=\ket{\Psi_p},\\
+    \ket{J_n^{\pi_n},\beta_n}&=\ket{\Psi_n},
+\end{split}\end{equation}
+where $J_p$ is the total angular momentum of the proton state, $\pi_p$ is its parity,
+and $\alpha_p$ is just a state label, and equivalently for the neutron states. 
+We build our many-body basis states by coupling together these proton and
+neutron states: 
+\begin{equation}\label{cbasis}
+	\ket{J_p^{\pi_p},\alpha_p}\otimes\ket{J_n^{\pi_n},\beta_n}.
+\end{equation}
+
+Our
+solutions to (\ref{ppnnsol}) yield $d_\pi$ pure proton eigenstates and $d_\pi$ pure
+neutron eigenstates. The eigenstates of a Hermitian operator form a complete set 
+of orthogonal eigenvectors. Assuming these are normalized, any many-body 
+wavefunction can be expanded:
+\begin{equation}
+    \ket{\Psi} = \sum_{\alpha_p}^{d_\pi}\sum_{\beta_n}^{d_\nu}\Psi_{\alpha_p\beta_n} \ket{J_p^{\pi_p},\alpha_p}\otimes\ket{J_n^{\pi_n},\beta_n}.
+\end{equation}
+Therefore these states can be used to compute the matrix elements of the full Hamiltonian
+(\ref{sep}), where $\hat{H}_p + \hat{H}_{pp}$ and $\hat{H}_n+H_{nn}$ are now
+used in their diagonal forms.
+
+So far all we have done is to solve the nuclear Hamiltonian in a basis of
+coupled proton and neutron states by solving the proton and neutron 
+interactions separately. The computational advantage to this
+procedure lies in the prospect of truncating the model space. In doing so, we 
+will have to make choices to ensure that the eigenstates of the truncated
+Hamiltonian remain eigenstates of $J^2$. 
+If we were to truncate the basis in an M-Scheme procedure, then our
+solutions would not be guaranteed to have good total angular momentum. To see why,
+consider the following example for a two state system. Imagine a basis with two
+states $\frac{1}{\sqrt{2}}(\ket{z;+}+\ket{z;-})$ and
+$\frac{1}{\sqrt{2}}(\ket{z;+}-\ket{z;-})$. If we were
+truncate to just one of either of these states, then any solution in the truncated
+basis could not be an eigenstate of $\hat{S}_z$. Similarly, a truncated M-scheme
+basis is not guaranteed to have good total angular momentum. Therefore,
+we choose a basis with good total angular momentum so that even once we
+truncate the basis we are guaranteed to get solutions with good total angular momentum.
+This is called a J-scheme.
+
+Therefore we choose to couple our proton and neutron states in such a way as to
+be eigenstates of $\hat{J}^2$:
+\begin{equation}\label{cbasisJ}
+	[\ket{J_p^{\pi_p},\alpha_p}\otimes\ket{J_n^{\pi_n},\beta_n}]_{J^\pi}\equiv
+	\ket{J_p^{\pi_p},\alpha_p,J_n^{\pi_n},\beta_n;J^\pi},
+\end{equation}
+A wavefunction expanded in this basis is of the form
+\begin{equation}
+    \ket{\Psi} = \sum_{\alpha_p\beta_n}^{Q}\Psi_{\alpha_p\beta_n} 
+    \ket{J_p^{\pi_p},\alpha_p,J_n^{\pi_n},\beta_n;J^\pi},
+\end{equation}
+and is guaranteed to have good total $J$. Here, the sum runs up to $Q$, which
+will be chosen to be $Q << min[d_p,d_n]$ when computing the matrix elements of 
+(\ref{sep}).
+
+
+
+
+
+\section{Factorizing the Proton-Neutron Interaction}
+
+To calculate the matrix elements of $H_{pn}$, we refactor equation (\ref{eqn: hpn})
+into one-body density-like operators whose matrix elements can be computed from the density 
+matrices found from solving the single-species terms (see equation (\ref{ppnnsol}))
+of the full Hamiltonian (\ref{sep}). Equation (\ref{eqn: hpn}) is written
+as a product of pair creation and annihilation operators. These can be reordered
+into one-body density operators. Doing so will introduce a nontrivial phase and
+a number of identities involving vector coupling coefficients will be applied.
+
+
+Expanding equation (\ref{eqn: hpn}) using (\ref{pairs}), we obtain
+\begin{equation}\begin{split}\label{hpnexpanded}
+    H_{pn} = \sum_{abcd}&\sum_J V_J^{(pn)}(ab,cd) \\
+    &\sum_M \sum_{m_am_b}\sum_{m_cm_d} (j_a m_a, j_b m_b | JM )
+        (j_c m_c, j_d m_d | JM )c^\dagger_{j_am_a}c^\dagger_{j_bm_b}c_{j_cm_c} c_{j_dm_d},
+\end{split}\end{equation}
+where the sums are constrained such that $M=m_a+m_b=m_c+m_d$. We want to write (\ref{hpnexpanded})
+in terms of the the generalized one-body density operator:\cite{Schuck}:
+\begin{equation}
+    \rho_{K\mu}(a\tilde{c}) \equiv \sum_{m_a m_c} (j_a m_a, j_c -m_c | K\mu) 
+c^\dagger_{j_am_a} \tilde{c}_{j_c-m_c}.
+\end{equation}
+Given the definition of a time-reversed annihilation operator\cite{Edmonds},
+\begin{equation} 
+    \tilde{c}_{j_c-m_c} = (-1)^{j_c-m_c}c_{j_c m_c},
+\end{equation}
+we write the generalized one-body density operator in terms of the same creation/annihilation
+operators that appear in (\ref{hpnexpanded}):
+\begin{equation}\label{rhokm}
+    \rho_{K\mu}(a\tilde{c}) = \sum_{m_a m_c} (j_a m_a, j_c -m_c | K\mu)
+(-1)^{j_c -m_c} c^\dagger_{j_a m_a} c_{j_c m_c}.
+\end{equation}
+The tilde over the index $c$ reminds us the time reversal 
+operator was used. To move further we need to
+recouple the vector coupling coefficients in (\ref{hpnexpanded}) to match
+the coefficients in the definition (\ref{rhokm}). This requires \textit{six-J symbols}\cite{Edmonds},
+an invariant generalization of vector coupling coefficients. A brief introduction 
+to vector coupling coefficients and six-J symbols are given in Appendix 
+\ref{appendix: vc}. We will need the following relationship
+between vector-coupling coefficients and the six-J symbol\cite{Edmonds}:
+\begin{equation}\begin{split}\label{edmondsid1}
+    (j_a m_a, j_b m_b | JM )&(j_c m_c, j_d m_d | JM )= \\ 
+\sum_{K\mu} (-1)^{J+M}&(-1)^{j_b-j_d+\mu}(2J+1) \begin{Bmatrix} j_a & j_b & J \\ 
+j_d & j_c & K \end{Bmatrix} \\ 
+    &(j_a m_a, j_c-m_c | K\mu )(j_b m_b, j_d -m_d | K-\mu ).
+\end{split}\end{equation}
+Now that we have what we need, we start again with 
+(\ref{eqn: hpn}) and sequentially apply these definitions and
+identities. The pair creation and annihilation operators in 
+(\ref{eqn: hpn}) can be rewritten using (\ref{edmondsid1}):
+
+\begin{equation}\begin{split}\label{derivation}
+   \sum_M  A^\dagger_{JM}(ab)&\ A_{JM}(cd) \\
+           =\sum_{M}\sum_{m_am_b}&\sum_{m_cm_d} (j_am_a,j_bm_b|JM)(j_cm_c,j_dm_d|JM)
+                c^\dagger_{j_am_a}c^\dagger_{j_bm_b}c_{j_cm_c}c_{j_dm_d} \\
+           =\sum_{M}\sum_{m_am_b}&\sum_{m_cm_d}\sum_{K\mu}(-1)^{J+M}(-1)^{j_b-j_d+\mu}(2J+1)
+                \begin{Bmatrix} j_a & j_b & J \\ j_d & j_c & K \end{Bmatrix} \\ 
+          & (j_a m_a, j_c-m_c | K\mu )(j_b m_b, j_d -m_d | K-\mu )
+                c^\dagger_{j_am_a}c^\dagger_{j_bm_b}c_{j_cm_c}c_{j_dm_d}
+\end{split}\end{equation}
+We apply an anticommutation relation to reorder the creation/annihilation operators:
+\begin{equation}\begin{split}\label{usecom}
+     c^\dagger_{j_am_a}c^\dagger_{j_bm_b}c_{j_cm_c}c_{j_dm_d} &= 
+        c^\dagger_{j_am_a}(\delta_{j_bm_b,j_cm_c}-c_{j_cm_c}c^\dagger_{j_bm_b})c_{j_dm_d} \\
+        &=\delta_{j_bj_c}\delta_{m_bm_c}c^\dagger_{j_am_a}c_{j_dm_d} 
+        - c^\dagger_{j_am_a}c_{j_cm_c}c^\dagger_{j_bm_b}c_{j_dm_d},
+\end{split}\end{equation}
+where the term containing $c^\dagger_{j_am_a}c_{j_dm_d}$ is a charge-changing 
+operator and can be ignored. Inserting (\ref{usecom}) into (\ref{derivation})
+and applying the definition (\ref{rhokm}), 
+\begin{equation}\begin{split}
+    &\sum_M A^\dagger_{JM}(ab)\ A_{JM}(cd) \\
+    &=\sum_M\sum_{K\mu}(-1)^{J+M+j_b-j_d+\mu}(2J+1)
+        \begin{Bmatrix} j_a & j_b & J \\ j_d & j_c & K \end{Bmatrix}
+    (-1)^{-j_c+m_c-j_d+m_d}\rho_{K\mu}
+                (a\tilde{c})\rho_{K-\mu}(b\tilde{d}) \\
+          &=\sum_{K\mu}(-1)^{J+j_b+j_c}(2J+1)\begin{Bmatrix} j_a & j_b & J \\ 
+                j_d & j_c & K \end{Bmatrix}(-1)^\mu \rho_{K\mu}(a\tilde{c})\rho_{K-\mu}
+                (b\tilde{d}),
+\end{split}\end{equation}
+where I applied the condition that $M=m_a+m_b=m_c+m_d$ and the general property that 
+$(-1)^{j} = (-1)^{j+2n}$ when $n$ is an integer. In the second equality the 
+constraint  $\mu=m_a-m_c=-(m_b-m_d)$ eliminates the sum over $M$. To further simplify
+our notation, we define the dot product:
+\begin{equation}\begin{split}
+	\rho_{K}(a\tilde{c}) \cdot \rho_{K}(b\tilde{d}) &= \sum_\mu (-1)^K
+(2K+1)^{-1/2}(K\mu,K-\mu|00)\rho_{K\mu}(a\tilde{c})\rho_{K-\mu}(b\tilde{d}) \\
+	&= \sum_{\mu} (-1)^{-\mu} \rho_{K\mu}(a\tilde{c})\rho_{K-\mu}(b\tilde{d}),
+\end{split}\end{equation}
+where we applied the following identity for the case where we are coupling 
+up to zero total angular momentum\cite{Edmonds}:
+\begin{equation}\label{couplezero}
+	(K\mu,K-\mu|00) = (-1)^{K-\mu}(2K+1)^{-1/2}.
+\end{equation} 
+Thus the proton-neutron Hamiltonian can be written as
+\begin{equation}\begin{split}
+	H_{pn} = \sum_{abcd}\sum_J V_J^{(pn)}(ab,cd)\sum_{K}(-1)^{J+j_b+j_c}(2J+1)
+\begin{Bmatrix} j_a & j_b & J \\ j_d & j_c & K \end{Bmatrix}\rho_{K}(a\tilde{c}) 
+\cdot \rho_{K}(b\tilde{d}),
+\end{split}\end{equation}
+a coupling of the proton and neutron density matrices through a  
+factor we define as:
+\begin{equation} \label{eqn: wmat}
+	W_K(ac,bd) \equiv \sum_J (-1)^{J+j_b+j_c}(2J+1)\begin{Bmatrix} j_a & j_b & J \\ 
+j_d & j_c & K \end{Bmatrix}V_J^{(pn)}(ab,cd).
+\end{equation}
+Our Hamiltonian is now in a form that can be recognized as potential matrix elements
+$W_K(ac,bd)$ times one-body density operators $\hat{\rho}_{K}(a\tilde{c}) \cdot \hat{\rho}_{K}
+(b\tilde{d})$:
+\begin{equation}\begin{split}\label{Hpnfull}
+	H_{pn} = \sum_{abcd}\sum_{K}W_K(ac,bd)\hat{\rho}_{K}(a\tilde{c}) \cdot \hat{\rho}_{K} (b\tilde{d}).
+\end{split}\end{equation}
+
+
+
+\section{Matrix elements}
+Matrix elements can now be computed in our basis of coupled proton-neutron states
+using the above form of the Hamiltonian expressed in terms of density operators.
+Our full Hamiltonian is 
+\begin{equation}
+ H = H_p + H_{pp} + H_n + H_{nn} + H_{pn}
+\end{equation}
+and the basis states are $\ket{J_p^{\pi_p},\alpha_p,J_n^{\pi_n},\beta_n|J^{\pi}}$. 
+
+The proton-only and neutron-only terms have matrix elements defined as
+\begin{equation}
+    \bra{J_p,\pi_p,\alpha_p} H_p+H_{pp} \ket{J_p,\pi_p,\alpha_p} \equiv 
+        h^{J_p^{\pi_p}}(\alpha_p',\alpha_p)
+\end{equation}
+and
+\begin{equation}
+    \bra{J_n,\pi_n,\alpha_n} H_n + H_{nn} \ket{J_n,\pi_n,\alpha_n} \equiv 
+        h^{J_n^{\pi_n}}(\beta_n',\beta_n)
+\end{equation}
+These are the single species operators whose matrix elements will be found as
+solutions from BIGSTICK.                                         
+\begin{equation}\begin{split}
+    &(H_p+H_{pp}) \ket{J_p,\pi_p,\alpha_p} = E(\alpha_p)\ket{J_p,\pi_p,\alpha_p} \textnormal{ and,} \\
+    &(H_n+H_{nn}) \ket{J_n,\pi_n,\alpha_n} = E(\alpha_n)\ket{J_n,\pi_n,\alpha_n}.
+\end{split}\end{equation}
+Thus we have:
+\begin{equation}\begin{split}
+    h^{J_p^{\pi_p}} &= \delta_{a_p'a_p} E(\alpha_p) \textnormal{ and,} \\
+    h^{J_n^{\pi_n}} &= \delta_{b_n'b_n}E(\alpha_n),
+\end{split}\end{equation}
+which contribute:
+\begin{equation}
+    \delta_{J_n'J_n}\delta_{J_p'J_p}\Big( \delta_{\beta_n'\beta_n}h^{J_p}
+(\alpha_p',\alpha_p) + 
+ \delta_{\alpha_p'\alpha_p}h^{J_n}(\beta_n'\beta_n)\Big). 
+\end{equation}
+
+The final term $H_{pn}$ is a weighted sum of scalar products between two 
+tensor operators of the form:
+\begin{equation}\label{tpd}
+    T(k)\cdot U(k) = \rho_{K}(a\tilde{c}) \cdot \rho_{K} (b\tilde{d}).
+\end{equation}
+(See equation (\ref{Hpnfull}.) Since $\rho_K(a\tilde{c})$ acts only on protons,
+and $\rho_K(b\tilde{d})$ acts only on neutrons, these two operators
+commute, and can be computed in a coupled basis using a reduction to a product of 
+operators in the uncoupled basis\cite{Edmonds}:
+\begin{equation}\begin{split}
+    \bra{j_1'j_2';J'M'}&T(k)\cdot U(k)\ket{j_1j_2;JM} = \\
+        &(-1)^{j_1+j_2'+J}\delta_{J'J}\delta_{M'M}
+\begin{Bmatrix} 
+J & j_2' & j_1' \\ 
+k & j_1 & j_2 
+\end{Bmatrix}   \bra{j_1'}T(k)\ket{j_1}\bra{j_2'}U(k)\ket{j_2}
+\end{split}\end{equation}
+In the case of (\ref{tpd}), we will have our dependence on 
+$\bra{J_p'^{\pi_p'},\alpha_p'}\rho_k(a\tilde{c})\ket{J_p^{\pi_p},\alpha_p}$ and
+$\bra{J_n'^{\pi_n'},\beta_n'}\rho_k(b\tilde{d})\ket{J_n^{\pi_n},\beta_n}$.
+These are just the proton and neutron density matrices represented in the basis 
+of uncoupled proton and neutron states, respectively. Recalling that these 
+uncoupled states are the eigenstates of the pure proton and pure neutron 
+parts of the full Hamiltonian, these density matrices are 
+density matrices produced by BIGSTICK when computing
+$H_p + H_{pp}$ and $H_n + H_{nn}$.
+
+Then the proton-neutron Hamiltonian matrix elements are
+\begin{equation}\begin{split}\label{eqn: hmat}
+\bra{J_p'^{\pi_p'},\alpha_p',J_n'^{\pi_n'},\beta_n';J^{\pi}}
+ &\hat{H}_{pn} 
+ \ket{J_p^{\pi_p},\alpha_p,J_n^{\pi_n},\beta_n;J^{\pi}} = \\
+\sum_{ac,bd}\sum_{K}& W_K(ac,bd)(-1)^{J_p+J_n'+J}\begin{Bmatrix} J & J_n' & J_p' \\ K & J_p & J_n \end{Bmatrix} \\
+&\bra{J_p'^{\pi_p'},\alpha_p'}\rho_K(a\tilde{c})\ket{J_p^{\pi_p},\alpha_p}
+\bra{J_n'^{\pi_n'},\beta_n'}\rho_K(b\tilde{d})\ket{J_n^{\pi_n},\beta_n}
+\end{split}\end{equation}
+This matrix is then solved using techniques from linear algebra. In PNISM, the 
+user can either select the included Lanczos algorithm to solve for low lying 
+states or to use the full Householder diagonalization option using
+the routine SSYEV from the LAPACK\cite{LAPACK} library, at the cost of increased run time.
+
+The next major step is to calculate the one-body density matrices,  
+used to calculate transition strengths. This is addressed in the next section.
+
+
+\section{One-body density matrices}
+A basic functionality of any configuration interaction code is the ability to 
+calculate density matrices.
+A general one-body density matrix is defined by
+\begin{equation}\label{eq.densitymat}
+	\rho_k^{f,i}(ab)=\bra{\Psi_f}[c_a^{\dagger}\otimes c_b]_k\ket{\Psi_i},
+\end{equation}
+which finds its use in the calculation of operator matrix elements
+\begin{equation}
+	\bra{\Psi_f}\hat{O}\ket{\Psi_i}=\sum_{ab} \rho_k^{f,i}(ab) \bra{a}\hat{O}\ket{b}.
+\end{equation}
+
+In order to calculate the density matrix elements between the eigenstates of the proton-
+neutron Hamiltonian,
+which are output from PNISM in the basis of coupled proton and neutron wavefunctions,
+we need to be able to write (\ref{eq.densitymat}) in terms of the density matrices 
+provided by BIGSTICK.
+These, however, are computed in the basis of pure proton and pure neutron wavefunctions.
+This section walks through the derivation of the one-body density matrix elements for 
+our eigenstates
+in terms of the one-body density matrices from the donor wavefunctions.
+
+The matrix elements of a tensor product operator in a basis of coupled states 
+are\cite{Edmonds}
+\begin{equation} \begin{split}
+\bra{j_1'j_2';J'}[\hat{T}_{k_1}\otimes \hat{U}_{k_2}]_K\ket{j_1j_2;J} \\
+=[J'][K][J]
+\begin{Bmatrix} 
+j_1' & j_1 & k_1 \\ 
+j_2' & j_1 & k_2 \\
+J' & J & K
+\end{Bmatrix}
+\bra{j_1'}\hat{T}_{k_1}\ket{j_1}\bra{j_2'}\hat{U}_{k_2}\ket{j_2}.
+\end{split} \end{equation}
+If either $\hat{T}_{k_1}$ or $\hat{U}_{k_2}$ is the identity operator, 
+as is the case for the 
+one-body density matrices, then this expression further simplifies to 
+\begin{equation}\begin{split}
+\bra{j_1'j_2';J'}[\hat{T}_{k_1}]\ket{j_1j_2;J} \\
+= \delta_{j_2'j_2}(-1)^{j_1'+j_2+J+K}[J'][J]
+\begin{Bmatrix} 
+j_1' & J' & j_2 \\ 
+J & j_1 & k
+\end{Bmatrix}
+\bra{j_1'}\hat{T}_k\ket{j_1}
+\end{split}\end{equation}
+and similarly for $\hat{U}_{k_2}$.
+
+Thus we can find the proton density matrix elements in the coupled basis in terms of 
+the density matrices in the uncoupled basis as
+\begin{equation}\label{eq.tensor}\begin{split}
+\bra{j_{\pi}'j_{\nu}';J'}[\pi_a^{\dagger}\otimes \pi_c]_K\ket{j_{\pi}j_{\nu};J} \\
+= \delta_{j_{\nu}'j_{\nu}}(-1)^{j_{\pi}'+j_{\nu}+J+K}[J'][J]
+\begin{Bmatrix} 
+j_{\pi}' & J' & j_{\nu} \\ 
+J & j_{\pi} & k
+\end{Bmatrix}
+\bra{j_{\pi}'}[\pi_a^{\dagger}\otimes \pi_c]_K\ket{j_{\pi}}
+\end{split}\end{equation}
+The Kronecker-$\delta$ from the identity operator on the neutron space, 
+and the orthogonality of the basis states. If more quantum numbers were included,
+more Kronecker-$\delta$s would have to be added. Similarly, for the neutron density 
+operator $[\nu_b^{\dagger}\otimes \nu_d]_K$ we have
+
+\begin{equation}\label{eq.tensor2}\begin{split}
+\bra{j_{\pi}'j_{\nu}';J'}[\nu_b^{\dagger}\otimes \nu_d]_K\ket{j_{\pi}j_{\nu};J} \\
+= \delta_{j_{\pi}'j_{\pi}}(-1)^{j_{\pi}+j_{\nu}+J'+K}[J'][J]
+\begin{Bmatrix} 
+j_{\nu}' & J' & j_{\pi} \\ 
+J & j_{\nu} & k
+\end{Bmatrix}
+\bra{j_{\pi}'}[\pi_a^{\dagger}\otimes \pi_c]_K\ket{j_{\pi}}.
+\end{split}
+\end{equation}
+Note that this is not as simple as exchanging $\pi$ and $\nu$.
+
+Finally, to get the expression for the density matrix for our coupled-state solutions, recall
+that our states $\Psi_f$ and $\Psi_i$ in (\ref{eq.densitymat}) are solutions to 
+\begin{equation}
+\hat{H}_{} \ket{\Psi} = E \ket{\Psi}
+\end{equation}
+and are given in the basis of coupled proton-neutron states. Each state can be written as
+\begin{equation}\label{eq.decomp}
+\ket{\Psi}=\sum_\alpha c_\alpha \ket{j_{\pi}j_{\nu};J}_\alpha.
+\end{equation}
+Combining this expression (\ref{eq.decomp}) and the relation (\ref{eq.tensor}) with our definition 
+(\ref{eq.densitymat}), we obtain the desired result
+\begin{equation}\begin{split}\label{eqn: denmat}
+\rho_k^{f,i}(\pi_a\pi_c)=\bra{\Psi_f}[\pi_a^{\dagger} \pi_c]_k\ket{\Psi_i} \\
+=\sum_{\alpha\beta}c_{\alpha}^fc_{\beta}^i 
+\bra{j_{\pi}^\alpha j_{\nu}^\alpha;J^f}
+[\pi_a^{\dagger} \pi_c]_k
+\ket{j_{\pi}^\beta j_{\nu}^\beta;J^i} \\
+=\sum_{\alpha\beta}c_{\alpha}^fc_{\beta}^i
+\delta_{j_{\nu}^\alpha j_{\nu}^\beta}(-1)^{j_{\pi}^\alpha+j_{\nu}^\beta+J^i+K}[J^f][J^i]
+\begin{Bmatrix} 
+j_{\pi}^\alpha & J^f & j_{\nu}^\beta \\ 
+J^i & j_{\pi}^\beta & k
+\end{Bmatrix}
+\bra{j_{\pi}^\alpha}[\pi_a^{\dagger} \pi_c]_K\ket{j_{\pi}^\beta}.
+\end{split}\end{equation}
+The neutron one-body density matrix has identical structure.
+
+This concludes the analytic discussions necessary to write the proton
+neutron interacting shell model code, PNISM. We have the expression for both the
+Hamiltonian matrix elements in terms of quantities which can be obtained from 
+solutions from BIGSTICK (or any properly formatted results from an interacting 
+shell model code), and the one-body density matrices which are used to compute
+transition rates. Although the code for computing one-body density matrices has 
+been written and tested, we have yet to apply it. Equation (\ref{eqn: hmat}) along with (\ref{eqn: wmat}) and 
+(\ref{eqn: denmat}) are the actual equations coded up in PNISM.
+
+
+
+
+
+
+

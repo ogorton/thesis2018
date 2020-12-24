@@ -1,0 +1,121 @@
+\chapter{PROTON-NEUTRON DECOMPOSITION}
+\label{chap:decomp}
+
+In the previous chapter, we studied the distribution of wavefunction coefficients
+in order to provide evidence that there exists a basis in which our nuclear
+wavefunctions could be truncated, thus allowing more efficient representation
+of the wavefunctions. Ultimately our goal is to find a basis in which our 
+Hamiltonian can be truncated.
+In this chapter I will examine a decomposition of wavefunctions which
+corresponds to a particular framework for computing truncated Hamiltonian matrix
+elements.
+
+We will be assuming that our Hamiltonian can be decomposed as
+\begin{equation}\label{htotal}
+	\hat{H} = \hat{H}_{proton} + \hat{H}_{neutron} + \hat{H}_{proton-neutron}
+\end{equation}
+where $\hat{H}_{proton}$ contains all interactions between protons, 
+$\hat{H}_{neutron}$ contains all interactions between neutrons, and $\hat{H}_{proton-neutron}$ contains
+all remaining interactions between protons and neutrons. Then we call the 
+eigenstates of the pure-proton Hamiltonian $\ket{\pi}$, as in
+\begin{equation}\label{hppp}
+	H_{proton}\ket{\pi} = E_p\ket{\pi},
+\end{equation}
+and the eigenstates of the pure-neutron Hamiltonian are equivalently
+define for $\hat{H}_{neutron}$ and $\ket{\nu}$. 
+Roughly speaking, our proposed truncation 
+scheme is to compute the full Hamiltonian (\ref{htotal}) in a basis
+built up from the coupled eigenstates of $\hat{H}_{proton}$ and $\hat{H}_{neutron}$.
+It was therefore worth decomposing existing wavefunctions $\ket{\Psi}$
+into the eigenstates of both pure-proton interaction operators and 
+pure-neutron interaction operators. This will tell us how whether or not
+truncating a basis of coupled pure-proton and pure-neutron wavefunctions
+will be viable. To see why, consider an arbitrary wavefunction $\ket{\Psi}$.
+To expand $\ket{\Psi}$ into a basis $\{\ket{\alpha}\}$, one first computes the
+coefficients
+\begin{equation}
+    c_\alpha = \braket{\alpha}{\Psi}.
+\end{equation}
+If some significant subset of the coefficients $\{\ket{\alpha}\}$ are much smaller than the rest,
+then the full wavefunction,
+\begin{equation}
+    \ket{\Psi} = \sum_\alpha c_\alpha \ket{\alpha},
+\end{equation}
+could be represented by just a few terms. What we care about is the magnitude of
+the coefficients $\{\ket{\alpha}\}$, thus we could instead compute
+\begin{equation}\label{coef2}
+    |c_\alpha|^2 = \braket{\Psi}{\alpha}\braket{\alpha}{\Psi},
+\end{equation}
+where the object $\ket{\alpha}\bra{\alpha}$ is a projection operator.
+
+We computed the equivalent set of coefficients (\ref{coef2}) for our
+nuclear wavefunctions projected onto the eigenstates of $\hat{H}_{proton}$ and
+$\hat{H}_{neutron}$.
+This was done using existing
+capabilities in BIGSTICK to compute transition strength functions. In particular I
+used the option to decompose wavefunctions onto scalar operators\cite{Johnson18}.
+To do this, we first solve for the wavefunction $\ket{\Psi}$ for some nucleus.
+Then BIGSTICK solves equation (\ref{hppp}) and the equivalent equation for the
+neutron Hamiltonian, using its Lanczos capabilities to find low-lying 
+eigenstates $\ket{\pi_a}$ (or $\ket{\nu_a}$). Then, the nuclear wavefunction is projected
+onto these eigenstates in the following manner:
+\begin{equation}\begin{split}
+	\braket{\pi_a}{\Psi} &= \bra{\pi_a}\sum_{a,b}\tilde{\Psi}_{ab}\ket{\pi_a}\ket{\nu_b} \\
+		              &= \sum_{b}\tilde{\Psi}_{ab}\ket{\nu_b}.
+\end{split}\end{equation}
+The strengths of these projections is then computed as
+\begin{equation}\begin{split}
+        \braket{\Psi}{\pi_a'}\braket{\pi_a}{\Psi} &= \sum_b \tilde{\Psi}^*_{a'b}\tilde{\Psi}_{ab} \\
+ 		&= \sum_b^{N_{keep}} |\Psi_{ab}|^2\\
+        & \equiv c_a^2.
+\end{split}\end{equation}
+The quantities $c_a^2$ are the strengths of the projection of a wavefunction $\ket{\Psi}$
+onto the proton-proton interaction eigenstate $\ket{\pi_a}$. Since we are assuming a set of normalized 
+wavefunctions in our basis, 
+\begin{equation}
+1 = \sum_a \braket{\pi_a}{\pi_a},
+\end{equation}
+and thus the strengths $c_a^2$ are the fractions of the total wavefuntion $\ket{\Psi}$
+contained in the state $\ket{\pi_a}$.
+
+I projected nuclear wavefunctions onto the eigenstates of the proton Hamiltonian
+of the neutron Hamiltonian and plotted the strengths $c_X^2$ for each interaction
+as a function of the eigenstate number. A typical set of results in shown in
+Figure \ref{fig: pndecomp1} and Figure \ref{fig: pndecomp2}.
+The vertical axis is the strength of the decomposition onto the eigenstate
+of either the proton Hamiltonian or the
+neutron Hamiltonian with the $X^{th}$ lowest energy. Each plots has two sets
+of values, one for each of two particle-hole conjugate nuclei in the \textit{sd}-shell:
+one being the proton (PP) decomposition and the other being the neutron (NN) decomposition.
+
+There are two important conclusions to be drawn from these decompositions. The first is that the strengths
+fall off rapidly in the first handful of states. This suggests than
+a truncation of the coupled pure-proton and pure-neutron eigenstates could a viable 
+method for obtaining approximate wavefunctions. However it is already known that 
+this is the case for light nuclei\cite{Papenbrock03,Papenbrock04,Papenbrock05}. The second
+important feature is apparent when plotting the strength function
+decompositions for particle-hole conjugate nuclei on the same plot. We find that
+even though these pairs of nuclei have the same dimensions in their shell model spaces,
+nuclei for which $N>Z$ have strengths which are significantly lower than their 
+$N=Z$ conjugates. This is further evidence that the same proposed truncation scheme
+may be even more effective in heavier nuclei where $N>Z$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=4.5in]{Figures/decomp_na}
+    \caption{Strength decomposition of nuclear wavefunctions into eigenstates of
+    the proton-proton or neutron-neutron interaction for two particle-hole conjugate
+    nuclei in the \textit{sd}-shell. Strengths fall off exponentially. } 
+    \label{fig: pndecomp1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=4.5in]{Figures/decomp_na_ln}
+    \caption{Strength decomposition of nuclear wavefunctions into eigenstates of
+    the proton-proton or neutron-neutron interaction for two particle-hole conjugate
+    nuclei in the \textit{sd}-shell. The decomposition strengths of $^{28}$Na, with an unequal number of protons
+    and neutrons, fall off faster than its conjugate, suggesting that fewer states
+    are necessary to represent it. } 
+    \label{fig: pndecomp2}
+\end{figure}

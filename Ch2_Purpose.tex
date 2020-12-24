@@ -1,0 +1,157 @@
+\chapter{STATEMENT OF THE PROBLEM}
+\label{chap:purpose}
+
+In order to solve the nuclear many-body problem, the Schrodinger equation is recast
+as a matrix eigenvalue problem.
+We use an M-scheme configuration interaction code called BIGSTICK \cite{Johnson13}\cite{Johnson18}. 
+Despite the fact that the interaction files used to build the basis for the space are
+semi-empirical, BIGSTICK and codes like it are still numerically exact, that is, 
+they don't use any numerical approximations once the Hamiltonian is built, and 
+the basis is not truncated. This means that the error relative to experiment is
+due to the interaction the code uses and not the method for solving the problem. 
+The error in the results are fairly low, around a few 
+hundred keV, while low-lying states tend to be a few MeV in magnitude.
+BIGSTICK and configuration interaction codes like it can still be extremely computationally 
+expensive to run for large nuclei, even after an order of magnitude improvement
+using the M-scheme. Table \ref{memory} contains a short list of the storage space 
+(RAM) required to store just the nonzero matrix elements
+for various nuclei in different phenomenological model spaces.  
+A discussion of the dimensions of even heavier nuclei can be found in Chapter 7.
+
+\begin{table}[h!]
+    \caption{Sample Shell Model Dimensions}
+    \label{memory}
+%\centering
+\begin{tabular}
+    {c|c|c|c}
+    \hline
+    \hline
+    Nuclide   & Space & Basis dim. & Storage\cite{Johnson13,Johnson18} (GB)\\
+    \hline 
+    $^{28}$Si & $sd$ & $9.4\times 10^4$ & 0.2 \\
+    $^{52}$Fe & $pf$ & $1.1 \times 10^8$ & 720 \\
+    $^{56}$Ni & $pf$ & $1.1 \times 10^9$ & 9600 \\
+    \hline
+    \hline
+\end{tabular}
+
+\end{table} 
+
+Because of the intense computational cost of solving nuclear
+structure problems, and the limited computer resources available,
+it is necessary to approximate solutions via truncated model spaces.
+The purpose of this thesis is to investigate the viability of 
+truncating the nuclear many-body basis in a particular framework, 
+a basis of coupled proton and neutron Slater determinants, and 
+to truncate the basis by selecting the most important states. 
+The best method for doing so has yet to be determined, but later in Chapter 5 I will
+explain the attempt we have made. First I will provide
+evidence that such a method could be viable. 
+
+To do so I analyze the distribution of wavefunction coefficients. This 
+investigation was inspired by a similar study of
+light to medium mass nuclei using a singular value decomposition (SVD)
+of the wavefunction coefficients\cite{Papenbrock03,Papenbrock04,Papenbrock05}.
+In those studies, shell model basis states were approximated
+by truncating the basis in a coupled proton-neutron scheme. 
+Ground state energies in the \textit{sd} and \textit{pf} shell, as well as 
+low-lying states, were shown to converge exponentially with basis dimension to those 
+computed with the untruncated basis.
+The authors examined mostly
+$N=Z$ nuclei. The authors also provided no explanation for the 
+cause of the exponential convergence, and restricted themselves to relatively 
+low dimensional problems.
+In the next chapter, I will take a similar approach by examining the 
+distribution of wavefunction coefficients through the proton-neutron entanglement
+entropy.  
+
+
+\section{Theoretical Motivation}
+We can always expand a wavefunction into any basis. Suppose we have 
+some initial representation of our wavefunction,
+\begin{equation} \label{eqn: decomp1}
+    \ket{\Psi}=\sum_{i_p,j_p} \Psi_{i_p,j_n} \ket{i_p}\ket{j_n},
+\end{equation}    
+where the uncoupled basis states are Slater determinants:
+\begin{equation}\begin{split}
+    \ket{i_p} \textrm{ and }\ket{j_n}, 
+\end{split}\end{equation}
+where $i_p = 1, d_p$ and $j_p = 1, d_n$. Here, $d_p$ and $d_n$ are the number 
+of proton and neutron basis states, respectively.
+
+We choose to decompose our wavefunction $\ket{\Psi}$ into pure proton 
+$\ket{\pi_a}$ and pure neutron $\ket{\nu_b}$ wavefunctions which are 
+related to the old basis by some 
+unitary transformation, 
+\begin{equation}\label{unitary}
+    \ket{\pi_a}=\sum_{i_p}U_{ai_p}^\pi \ket{i_p},
+\end{equation}
+and similarly for $\ket{j_n}$ and $\ket{\nu_b}$.
+Thus we can find
+\begin{equation}\label{eqn: decomp2} \begin{split}
+    \ket{\Psi}  =\sum_{a,b} \tilde{\Psi}_{ab}\ket{\pi_a}\ket{\nu_b},
+\end{split}\end{equation}  
+where $a$ enumerates proton single-particle states and $b$ enumerates 
+neutron single-particle states. If the sum is taken over all states, (\ref{eqn: decomp2}) is equivalent to 
+(\ref{eqn: decomp1}). The goal, however, is to find a basis in which the 
+sum (\ref{eqn: decomp2}) can be truncated, thus reducing the size of the problem.
+
+\begin{equation}\label{eqn: decomptrunc}
+\ket{\Psi} = \sum_{a,b = 1}^{N} \tilde{\Psi}_{ab}\ket{\pi_a}\ket{\nu_b},\ \ N << \min(d_p,d_n).
+\end{equation}
+In order for the truncated sum to be useful, the terms we exclude must 
+be small compared to the overall wavefunction. 
+If we have some normalized representation of a wavefunction, 
+\begin{equation}\label{refEE1}
+    \ket{\Psi} = \sum_\alpha c_\alpha \ket{\Phi_\alpha},
+\end{equation}
+then the sum of the weights $|c_\alpha|^2$ is unity:
+\begin{equation}
+    1 = \sum_\alpha|c_\alpha|^2,
+\end{equation}
+and the distribution of the weights $|c_i|^2$ tells us how much the sum (\ref{refEE1})
+can be truncated in the basis ${\ket{\Phi_i}}$. 
+
+In a basis of coupled single particle states as in (\ref{eqn: decomp1}), 
+the coefficients form a non-symmetric matrix $\Psi_{i_p,j_n}$. However, it was shown in the
+studies cited above\cite{Papenbrock03,Papenbrock04,Papenbrock05} that a singular value
+decomposition\cite{NumRec} (SVD) of this matrix would transform $\Psi_{i_p,i_n}$ into a 
+diagonal matrix such that
+\begin{equation}\label{refEE2}
+    \ket{\Psi} = \sum_i \gamma_i \ket{\tilde{i_p}}\ket{\tilde{i_n}},
+\end{equation}
+where $\gamma_i=\tilde{\Psi}_{ii}$ are the diagonal elements of the transformed matrix of $\Psi_{i_p,j_n}$,
+and $\ket{\tilde{i_p}}$ and $\ket{\tilde{i_n}}$ are some undetermined basis states.
+(See Appendix \ref{appendix: svd} or Chapter 3 for a more detailed explanation of 
+singular value decompositions.)
+If such an expansion could be found, then, as for the simple case in (\ref{refEE1}),
+the distribution of expansion coefficients $\gamma_i$ would tell us how much 
+the expansion (\ref{refEE2}) could be truncated.
+The problem of course is determining the best basis, an as-yet unsolved problem.
+Nonetheless, there is still something to be learned from singular value decompositions.
+Just as eigenvalues are invariant under a change of basis, the ``eigenvalues''
+$\gamma_i$ are also invariant under a change of basis. (In fact these SVD eigenvalues
+and the SVD itself are generalizations of eigenvalue decompositions.) Therefore,
+we can compute the SVD eigenvalues of a known expansion, such as from the nuclear
+wavefunctions from an M-scheme method (e.g. BIGSTICK), and at the very least
+we can determine whether or not an truncation is possible.
+
+\section{Method}
+I conduct two related studies: In Chapter 3, I will examine the distribution of
+nuclear wavefunction amplitudes, from which we extract the
+proton-neutron entanglement entropy. I provide evidence that the creation of approximate wavefunctions
+through coupling of proton and neutron wavefunctions may be a 
+valuable method, and I test a postulate which predicts
+that this proton-neutron coupling scheme will be even more effective for
+nuclei where the number of neutrons is much larger than the number of 
+protons, i.e. for large isospin. Chapter 3 also attempts to investigate the
+cause of this behavior via the entanglement entropy.
+Then in Chapter 4, I will decompose BIGSTICK
+wavefunctions into their pure-proton and pure-neutron components by projecting
+the existing wavefunctions onto the appropriate operators. This, I will argue, 
+demonstrates directly that a truncated basis of coupled proton and neutron 
+Slater determinants can accurately reproduce nuclear wavefunctions.
+
+
+
+
