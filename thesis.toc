@@ -1,0 +1,52 @@
+\contentsline {schapter}{ABSTRACT}{v}%
+\contentsline {schapter}{LIST OF TABLES}{viii}%
+\contentsline {schapter}{LIST OF FIGURES}{ix}%
+\contentsline {schapter}{ACKNOWLEDGMENTS}{xi}%
+\pagebreak [3]
+\contentsline {chaphd}{CHAPTER}{1}%
+\nopagebreak 
+\contentsline {chapter}{\numberline {1}INTRODUCTION}{1}%
+\contentsline {section}{\numberline {}Mathematical Background}{2}%
+\contentsline {section}{\numberline {}Slater Determinants}{4}%
+\contentsline {section}{\numberline {}Second Quantization}{5}%
+\contentsline {section}{\numberline {}Effective Interactions and Shell Models}{6}%
+\contentsline {section}{\numberline {}Bringing it All Together: the Interacting Shell Model}{10}%
+\contentsline {chapter}{\numberline {2}STATEMENT OF THE PROBLEM}{13}%
+\contentsline {section}{\numberline {}Theoretical Motivation}{14}%
+\contentsline {section}{\numberline {}Method}{16}%
+\contentsline {chapter}{\numberline {3}ENTANGLEMENT ENTROPY}{17}%
+\contentsline {subsection}{\numberline {}Particle-Hole Conjugates}{21}%
+\contentsline {subsection}{\numberline {}Excited States and Thermalization}{23}%
+\contentsline {subsection}{\numberline {}Entropy and Isospin}{23}%
+\contentsline {subsection}{\numberline {}Dialing the Strength of the Proton-Neutron Interaction}{24}%
+\contentsline {section}{\numberline {}Modified Nuclear Interactions}{26}%
+\contentsline {section}{\numberline {}Toy Model}{28}%
+\contentsline {section}{\numberline {}Summary on Entanglement Entropy}{35}%
+\contentsline {chapter}{\numberline {4}PROTON-NEUTRON DECOMPOSITION}{37}%
+\contentsline {chapter}{\numberline {5}PNISM}{41}%
+\contentsline {section}{\numberline {}The Hamiltonian}{41}%
+\contentsline {section}{\numberline {}The Basis}{43}%
+\contentsline {section}{\numberline {}Factorizing the Proton-Neutron Interaction}{44}%
+\contentsline {section}{\numberline {}Matrix elements}{47}%
+\contentsline {section}{\numberline {}One-body density matrices}{48}%
+\contentsline {chapter}{\numberline {6}COMPUTATION}{51}%
+\contentsline {section}{\numberline {}Reading in Density Matrices}{52}%
+\contentsline {section}{\numberline {}Symmetries}{53}%
+\contentsline {section}{\numberline {}Numerical Methods}{54}%
+\contentsline {section}{\numberline {}Challenges and Speedups}{54}%
+\contentsline {chapter}{\numberline {7}RESULTS}{56}%
+\contentsline {section}{\numberline {}Capstone Calculations}{57}%
+\contentsline {section}{\numberline {}Heavy Nuclei}{58}%
+\contentsline {chapter}{\numberline {8}CONCLUSION AND FUTURE WORK}{64}%
+\contentsline {schapter}{REFERENCES}{66}%
+\pagebreak [3]
+\contentsline {chaphd}{APPENDICES}{68}%
+\nopagebreak 
+\contentsline {chapter}{\numberline {A}Supplementary Notes}{68}%
+\contentsline {section}{\numberline {}Vector Coupling Coefficients}{69}%
+\contentsline {section}{\numberline {}3-j Symbol}{69}%
+\contentsline {section}{\numberline {}6-j Symbols and 9-j Symbols}{69}%
+\contentsline {section}{\numberline {}Singular Value Decomposition}{69}%
+\contentsline {section}{\numberline {}Lanczos Method}{70}%
+\contentsline {section}{\numberline {}Variational Principle}{71}%
+\contentsline {chapter}{\numberline {B}Sample Density Matrix Files}{73}%

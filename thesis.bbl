@@ -1,0 +1,153 @@
+\begin{thebibliography}{10}
+
+\bibitem{Faessler}
+A.~Faessler,
+\newblock J. of Phys.: Conference Series {\bf 337}, 012065 (2012).
+
+\bibitem{Brown2}
+B.~A. Brown, M.~Horoi, and A.~Sen'kov,
+\newblock Phys. Rev. Lett. {\bf 113}, 1 (2014).
+
+\bibitem{Bednyakov}
+V.~Bednyakov and F.~Simkovic,
+\newblock Phys. Part. Nucl. {\bf 36}, 131 (2005).
+
+\bibitem{Sakhorav}
+A.~Sakhorav,
+\newblock JETP Lett. {\bf 5}, 24 (1967).
+
+\bibitem{Willmann}
+L.~Willmann and K.~Jungmann,
+\newblock Ann. Phys. (Berl.) {\bf 528}, 108 (2015).
+
+\bibitem{Haxton89}
+W.~C. Haxton, E.~M. Henley, and M.~J. Musolf,
+\newblock Phys. Rev. Lett. {\bf 63}, 949 (1989).
+
+\bibitem{Haxton02}
+W.~C. Haxton, C.~P. Liu, and M.~J. Ramsey-Musolf,
+\newblock Phys. Rev. C {\bf 65}, 045502 (2002).
+
+\bibitem{Johnson13}
+C.~W. Johnson, W.~E. Ormand, and P.~G. Krastev,
+\newblock Comp. Phys. Comm. {\bf 184}, 2761 (2013).
+
+\bibitem{Hall}
+B.~C. Hall,
+\newblock {\em Quantum Theory for Mathematicians},
+\newblock Springer, New York, 2013.
+
+\bibitem{eisenberg}
+J.~M. Eisenberg and W.~Greiner,
+\newblock {\em Microscopic Theory of the Nucleus},
+\newblock North-Holland Publishing Company, Amsterdam, 1972.
+
+\bibitem{Dirac}
+P.~A.~M. Dirac,
+\newblock Proc. R. Soc. Lond. A {\bf 112}, 661 (1926).
+
+\bibitem{Jeevanjee}
+N.~Jeevanjee,
+\newblock {\em An Introduction to Tensors and Group Theory for Physicists},
+\newblock Springer, Switzerland, 2011.
+
+\bibitem{Wong}
+S.~S.~M. Wong,
+\newblock {\em Introductory Nuclear Physics},
+\newblock Wiley-VCH, Weinheim, 2004.
+
+\bibitem{Waleka}
+A.~Fetter and J.~Walecka,
+\newblock {\em Quantum Theory of Many-Particle Systems},
+\newblock McGraw-Hill, New York, 1971.
+
+\bibitem{Johnson18}
+C.~W. Johnson, W.~E. Ormand, K.~S. McElvain, and H.~Shan,
+\newblock {\em BIGSTICK: A flexible configuration-interaction shell-model
+  code},
+\newblock Department of Physics, San Diego State University, 2018.
+
+\bibitem{Brussard}
+P.~J. Brussaard and P.~W.~M. Glaudemans,
+\newblock {\em Shell-model Applications in Nuclear Spectroscopy},
+\newblock North-Holland Publishing Company, Amsterdam, 1977.
+
+\bibitem{Segre}
+E.~Segre,
+\newblock {\em Nuclei and Particles},
+\newblock Benjamin/Cummings Publishing Company, Reading, Massachusetts, 1977.
+
+\bibitem{Heyde}
+K.~Heyde,
+\newblock {\em Basic Ideas and Concepts in Nuclear Physics},
+\newblock Institute of Physics Publishing, London, 1994.
+
+\bibitem{usdb}
+B.~A. Brown and W.~A. Richter,
+\newblock Phys. Rev. C {\bf 74}, 034315 (2006).
+
+\bibitem{nndc}
+T.~C. S. E.~W. Group,
+\newblock {\em Data Formats and Procedures for the Evaluated Nuclear Data File
+  ENDF-6},
+\newblock National Nuclear Data Center, Brookhaven National Laboratory, 1995.
+
+\bibitem{Papenbrock03}
+T.~Papenbrock and D.~J. Dean,
+\newblock Phys. Rev. C {\bf 67}, 051303 (2003).
+
+\bibitem{Papenbrock04}
+T.~Papenbrock, A.~Juodagalvis, and D.~J. Dean,
+\newblock Phys. Rev. C {\bf 69}, 024312 (2004).
+
+\bibitem{Papenbrock05}
+T.~Papenbrock and D.~J. Dean,
+\newblock J. Phys. G: Nucl. .Part. Phys. {\bf 31}, S1377 (2005).
+
+\bibitem{NumRec}
+W.~H. Press, S.~A. Teukolsky, W.~T. Vetterling, and B.~P. Flannery,
+\newblock {\em Numerical Recipes in Fortran 77},
+\newblock Cambridge University Press, Cambridge, 1992.
+
+\bibitem{Caurier}
+E.~Caurier, G.~Mart\'{\i}nez-Pinedo, F.~Nowacki, A.~Poves, and A.~P. Zuker,
+\newblock Rev. Mod. Phys. {\bf 77}, 427 (2005).
+
+\bibitem{Schuck}
+P.~Ring and P.~Schuck,
+\newblock {\em The Nuclear Many-Body Problem},
+\newblock Springer-Verlag, New York, 1980.
+
+\bibitem{Edmonds}
+A.~R. Edmonds,
+\newblock {\em Angular Momentum in Quantum Mechanics},
+\newblock Princeton University Press, Princeton, NJ, 1957.
+
+\bibitem{Feshbach}
+A.~deShalit and H.~Feshbach,
+\newblock {\em Theoretical Nuclear Physics, Volume I: Nuclear Structure},
+\newblock John Wiley and Sons, INC., New York, 1974.
+
+\bibitem{LAPACK}
+{\em LAPACK Users' Guide},
+\newblock 1999.
+
+\bibitem{mpi}
+M.~P.~I. Forum,
+\newblock {\em MPI: A Message-Passing Interface Standard},
+\newblock University of Tennessee, 2012.
+
+\bibitem{openmp}
+{\em OpenMP Application Programming Interface},
+\newblock 2015.
+
+\bibitem{Shankar}
+R.~Shankar,
+\newblock {\em Principles of Quantum Mechanics},
+\newblock Springer, New York, 1994.
+
+\bibitem{lanczos}
+J.~Cullum and R.~A. Willoughby,
+\newblock J. Comp. and App. Math. {\bf 12}, 37 (1985).
+
+\end{thebibliography}
